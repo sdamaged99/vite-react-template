@@ -10,6 +10,7 @@ interface DiaryEntry {
   note: string | null;
   enquiry_id: number | null;
   returned: number;
+  paid: number;
   deposit_status: "held" | "refunded" | "deducted" | "na";
 }
 interface Enquiry {
@@ -122,6 +123,7 @@ async function loadDiary() {
       who.textContent = [d.name, d.note].filter(Boolean).join(" · ");
       top.append(when, who);
       if (d.kind === "booking") {
+        top.append(chip(d.paid ? "Paid" : "Payment due", d.paid ? "bg-rec text-chambray-deep" : "bg-oat text-ink-soft"));
         if (d.returned) top.append(chip("Returned", "bg-rec text-chambray-deep"));
         top.append(
           chip(
@@ -148,6 +150,16 @@ async function loadDiary() {
       if (d.kind === "booking") {
         const actions = document.createElement("div");
         actions.className = "flex flex-wrap gap-2";
+        if (!d.paid) {
+          actions.append(
+            actionBtn("Payment received", async (b) => {
+              b.disabled = true;
+              if ((await api(`/diary/${d.id}/paid`, { method: "POST", body: JSON.stringify({ paid: true }) })) !== null)
+                refreshAll();
+              else b.disabled = false;
+            }),
+          );
+        }
         if (!d.returned) {
           actions.append(
             actionBtn("Mark returned", async (b) => {

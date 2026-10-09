@@ -16,7 +16,7 @@ adminRoutes.get("/me", (c) => c.json({ email: c.get("adminEmail") ?? null }));
 
 adminRoutes.get("/diary", async (c) => {
   const { results } = await c.env.DB.prepare(
-    "SELECT id, start_date, end_date, kind, name, note, enquiry_id, returned, deposit_status FROM diary WHERE end_date >= date('now', '-30 days') ORDER BY start_date",
+    "SELECT id, start_date, end_date, kind, name, note, enquiry_id, returned, paid, deposit_status FROM diary WHERE end_date >= date('now', '-30 days') ORDER BY start_date",
   ).all();
   return c.json({ diary: results });
 });
@@ -214,6 +214,17 @@ adminRoutes.post("/diary/:id/returned", async (c) => {
   const val = body.returned === false ? 0 : 1;
   await c.env.DB.prepare("UPDATE diary SET returned = ? WHERE id = ?").bind(val, id).run();
   await audit(c.env.DB, c.get("adminEmail"), "diary.returned", "diary", id, String(val));
+  return c.json({ ok: true });
+});
+
+/** Record hire payment received — separate from 'returned' and the deposit. */
+adminRoutes.post("/diary/:id/paid", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = (await c.req.json().catch(() => ({}))) as { paid?: boolean };
+  if (!Number.isInteger(id)) return c.json({ error: "Bad id" }, 400);
+  const val = body.paid === false ? 0 : 1;
+  await c.env.DB.prepare("UPDATE diary SET paid = ? WHERE id = ?").bind(val, id).run();
+  await audit(c.env.DB, c.get("adminEmail"), "diary.paid", "diary", id, String(val));
   return c.json({ ok: true });
 });
 
