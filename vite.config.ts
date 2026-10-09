@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [cloudflare(), tailwindcss()],
   build: {
     rollupOptions: {
+      external: [/^cloudflare:/],
       input: {
         main: page("index.html"),
         terms: page("terms/index.html"),

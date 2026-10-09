@@ -1,5 +1,3 @@
-import { connect } from "cloudflare:sockets";
-
 /**
  * Minimal SMTP submission client for Workers TCP sockets, written for sending
  * a handful of plain-text emails a month through the business's own NethServer.
@@ -26,6 +24,24 @@ export interface Mail {
 const CRLF = "\r\n";
 const TIMEOUT_MS = 15000;
 
+/** Minimal shape of a Workers TCP socket; `cloudflare:sockets` is loaded at
+ * runtime so the bundler never has to resolve the builtin module. */
+interface CfSocket {
+  readable: ReadableStream<Uint8Array>;
+  writable: WritableStream<Uint8Array>;
+  close(): Promise<void>;
+  startTls(): CfSocket;
+}
+type ConnectFn = (
+  address: { hostname: string; port: number },
+  options: { secureTransport: "on" | "starttls"; allowHalfOpen: boolean },
+) => CfSocket;
+
+async function getConnect(): Promise<ConnectFn> {
+  const mod = (await import(/* @vite-ignore */ "cloudflare:sockets")) as { connect: ConnectFn };
+  return mod.connect;
+}
+
 function addrOnly(s: string): string {
   const m = s.match(/<([^>]+)>/);
   return m?.[1] ?? s.trim();
@@ -38,12 +54,12 @@ class Session {
   private decoder = new TextDecoder();
   private encoder = new TextEncoder();
 
-  constructor(private socket: ReturnType<typeof connect>) {
+  constructor(private socket: CfSocket) {
     this.reader = socket.readable.getReader();
     this.writer = socket.writable.getWriter();
   }
 
-  rebind(socket: ReturnType<typeof connect>) {
+  rebind(socket: CfSocket) {
     this.socket = socket;
     this.reader = socket.readable.getReader();
     this.writer = socket.writable.getWriter();
@@ -103,6 +119,7 @@ function buildMessage(mail: Mail): string {
 }
 
 export async function sendMail(cfg: SmtpConfig, mail: Mail): Promise<void> {
+  const connect = await getConnect();
   const implicitTls = cfg.port === 465;
   let socket = connect(
     { hostname: cfg.host, port: cfg.port },
