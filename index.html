@@ -55,8 +55,9 @@
           <a class="nav-pill" href="#machine">The machine</a>
           <a class="nav-pill" href="#prices">Prices</a>
           <a class="nav-pill" href="#faq">FAQs</a>
+          <a class="nav-pill" href="mailto:bookings@sparklecarpets.im">Contact</a>
         </nav>
-        <a class="btn ml-auto px-5 py-2.5 text-[15px] md:ml-0" href="#book">Check availability</a>
+        <a class="btn ml-auto px-5 py-2.5 text-[15px] md:ml-0" href="#book">Check dates &amp; enquire</a>
         <button
           id="nav-toggle"
           class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line md:hidden"
@@ -75,6 +76,7 @@
           <a class="nav-pill" href="#machine">The machine</a>
           <a class="nav-pill" href="#prices">Prices</a>
           <a class="nav-pill" href="#faq">FAQs</a>
+          <a class="nav-pill" href="mailto:bookings@sparklecarpets.im">Contact</a>
         </div>
       </nav>
     </header>
@@ -83,17 +85,23 @@
       <!-- Hero: one composition, CTA above the fold -->
       <section class="shell grid items-center gap-10 py-12 md:grid-cols-[1.15fr_0.85fr] md:py-14">
         <div class="grid justify-items-start gap-5">
-          <h1 class="max-w-[16ch] text-[clamp(32px,4.8vw,50px)]">
-            Fresh carpets feel like a <span class="squig">brand-new home</span>
+          <h1 class="max-w-[18ch] text-[clamp(31px,4.6vw,48px)]">
+            Professional carpet cleaning. Without the <span class="squig">professional price</span>.
           </h1>
-          <p class="max-w-[50ch] text-[17.5px] text-ink-soft">
-            Hire the professional BISSELL Big Green from £30, clean every room yourself in a weekend, and hand it
-            back. Book online, pay at handover.
+          <p class="max-w-[52ch] text-[17.5px] text-ink-soft">
+            Hire our BISSELL Big Green carpet cleaner from just <span data-price-plan="24h">£30</span>. Easy
+            collection in Castletown or delivery across the Isle of Man.
           </p>
+          <ul class="flex list-none flex-wrap gap-x-5 gap-y-1.5 p-0 text-[14.5px] font-semibold">
+            <li class="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M2 9 L6 13 L14 3" fill="none" stroke="var(--color-chambray-deep)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Hire from&nbsp;<span data-price-plan="24h">£30</span></li>
+            <li class="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M2 9 L6 13 L14 3" fill="none" stroke="var(--color-chambray-deep)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Starter detergent included</li>
+            <li class="flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 16 16"><path d="M2 9 L6 13 L14 3" fill="none" stroke="var(--color-chambray-deep)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Locally owned on the Isle of Man</li>
+          </ul>
           <div class="flex flex-wrap gap-3">
-            <a class="btn" href="#book">Check availability</a>
+            <a class="btn" href="#book">Check dates &amp; enquire</a>
             <a class="btn btn-ghost" href="#prices">See prices</a>
           </div>
+          <p class="text-[13px] text-ink-soft">A <span data-price-setting="deposit_pence">£75</span> refundable security deposit applies to every hire.</p>
           <div class="grid gap-0.5 border-l-[3px] border-chambray pl-4 text-[14.5px] text-ink-soft">
             <p><strong class="text-ink">Independently owned on the Isle of Man.</strong></p>
             <p>Equipment hire, not a cleaning service: you do the cleaning, and the savings are yours.</p>
@@ -119,13 +127,13 @@
         <div class="shell">
           <div class="mb-8 grid gap-2">
             <h2 class="text-[clamp(25px,3.2vw,32px)]">Clean carpets in three easy steps</h2>
-            <p class="max-w-[54ch] text-[15.5px] text-ink-soft">No experience needed. Most people do a whole house in a weekend.</p>
+            <p class="max-w-[54ch] text-[15.5px] text-ink-soft">No experience needed. Clean at your own pace over a weekend.</p>
           </div>
           <div class="grid gap-x-10 gap-y-8 md:grid-cols-3">
             <div class="grid content-start gap-1.5 border-t-2 border-line pt-4">
               <span class="font-display text-[17px] text-chambray-deep">1</span>
               <h3 class="text-[18px] font-semibold">Book your dates</h3>
-              <p class="text-[15px] text-ink-soft">Pick your hire length from the calendar. We confirm, usually the same day.</p>
+              <p class="text-[15px] text-ink-soft">Pick your hire length from the calendar and send an enquiry; we confirm personally.</p>
             </div>
             <div class="grid content-start gap-1.5 border-t-2 border-line pt-4">
               <span class="font-display text-[17px] text-chambray-deep">2</span>
@@ -135,7 +143,7 @@
             <div class="grid content-start gap-1.5 border-t-2 border-line pt-4">
               <span class="font-display text-[17px] text-chambray-deep">3</span>
               <h3 class="text-[18px] font-semibold">Clean, then hand it back</h3>
-              <p class="text-[15px] text-ink-soft">Slow passes, like vacuuming. Return it rinsed and your deposit comes back.</p>
+              <p class="text-[15px] text-ink-soft">Slow passes, like vacuuming. Your deposit is refunded following return and inspection, subject to the hire terms.</p>
             </div>
           </div>
         </div>
@@ -144,7 +152,12 @@
       <!-- The machine -->
       <section id="machine" class="border-t border-line py-14">
         <div class="shell grid items-center gap-10 md:grid-cols-[1fr_1.1fr]">
-          <figure class="shot aspect-[4/3] rounded-2xl" aria-label="Photograph placeholder">
+          <!-- Machine photo slot. To swap in the real photograph: replace the .shot
+               block inside this figure with
+               <img src="/images/machine.jpg" alt="Our BISSELL Big Green carpet cleaning machine"
+                    width="1200" height="900" loading="lazy" class="h-full w-full rounded-2xl object-cover" />
+               and drop the file into public/images/ (~4:3). -->
+          <figure id="machine-photo" class="shot aspect-[4/3] rounded-2xl" aria-label="Photograph placeholder">
             <span class="shot-tag">Placeholder photo</span>
             <figcaption class="shot-note">
               Accurate product photograph of the BISSELL Big Green, to be supplied; no abstract stand-in on the final
@@ -197,7 +210,7 @@
             <div class="grid content-start gap-1 rounded-xl border border-line bg-card p-4 lg:p-5">
               <h3 class="text-[15px] font-bold">Weekend</h3>
               <span class="font-display text-[26px] lg:text-[32px]" data-price-plan="weekend">£55</span>
-              <p class="text-[13.5px] text-ink-soft">Friday to Monday</p>
+              <p class="text-[13.5px] text-ink-soft">Friday to Monday return; times agreed with you</p>
             </div>
             <div class="grid content-start gap-1 rounded-xl border border-line bg-card p-4 lg:p-5">
               <h3 class="text-[15px] font-bold">3 days</h3>
@@ -274,6 +287,23 @@
         </div>
       </section>
 
+      <!-- What to expect -->
+      <section class="border-t border-line py-14">
+        <div class="shell">
+          <div class="mb-8 grid gap-2">
+            <h2 class="text-[clamp(25px,3.2vw,32px)]">What you can expect</h2>
+          </div>
+          <ul class="grid list-none gap-x-10 gap-y-4 p-0 text-[15px] sm:grid-cols-2 lg:grid-cols-3">
+            <li><strong>Locally owned</strong><br /><span class="text-ink-soft">Run from Castletown, Isle of Man.</span></li>
+            <li><strong>Looked after</strong><br /><span class="text-ink-soft">Machine inspected and cleaned between hires.</span></li>
+            <li><strong>Simple instructions</strong><br /><span class="text-ink-soft">Provided with every hire and at handover.</span></li>
+            <li><strong>Starter detergent included</strong><br /><span class="text-ink-soft">One measured portion with every hire.</span></li>
+            <li><strong>Collection or delivery</strong><br /><span class="text-ink-soft">Collect free, or paid delivery by area.</span></li>
+            <li><strong>Transparent charges</strong><br /><span class="text-ink-soft">Clear hire prices and a refundable deposit.</span></li>
+          </ul>
+        </div>
+      </section>
+
       <!-- FAQ -->
       <section id="faq" class="border-t border-line py-14">
         <div class="shell grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
@@ -333,8 +363,7 @@
             <div class="grid content-start gap-4">
               <h2 class="max-w-[22ch] text-[clamp(24px,3vw,32px)]">Check availability &amp; enquire</h2>
               <p class="max-w-[46ch] text-[15px] text-ink-soft">
-                Tap a free date to start your enquiry; days struck through are already taken. We reply personally,
-                usually the same day. Sending the form is an enquiry only, nothing is booked or paid until we've
+                Tap a free date to start your enquiry; days struck through are already taken. We reply personally, as soon as we can. Sending the form is an enquiry only, nothing is booked or paid until we've
                 confirmed with you.
               </p>
               <div id="availability-cal" class="grid gap-5 sm:grid-cols-2">
