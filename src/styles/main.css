@@ -19,8 +19,8 @@
   --color-foot-line: #3b4654;
   --color-foot-text: #c7d0db;
 
-  --font-display: "Young Serif", Georgia, serif;
-  --font-body: "Karla", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
 @layer base {
