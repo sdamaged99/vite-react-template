@@ -1,4 +1,11 @@
 import "./styles/main.css";
+import {
+  addDays as sharedAddDays,
+  coveredDates,
+  isFriday as sharedIsFriday,
+  spanDaysFor,
+  todayIoM,
+} from "../shared/booking";
 
 // Set when Turnstile is configured in the Cloudflare dashboard; the Worker
 // skips verification while its secret is unset, so both sides stay in step.
@@ -51,23 +58,17 @@ interface PricingPayload {
 
 let pricing: PricingPayload | null = null;
 let busy: { start_date: string; end_date: string }[] = [];
+let dateClash = false;
 const isBusy = (iso: string) => busy.some((r) => iso >= r.start_date && iso <= r.end_date);
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => todayIoM();
 
-const FALLBACK_DAYS: Record<string, number> = { "24h": 1, "48h": 2, weekend: 3, "3day": 3, week: 7 };
 function spanDays(code: string): number {
   const rate = pricing?.rates.find((r) => r.code === code);
-  if (rate) return Math.max(1, Math.ceil(rate.duration_hours / 24));
-  return FALLBACK_DAYS[code] ?? 1;
+  return spanDaysFor(code, rate?.duration_hours);
 }
-function addDays(iso: string, n: number): string {
-  const d = new Date(iso + "T12:00:00Z");
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-const covered = (start: string, code: string) =>
-  Array.from({ length: spanDays(code) }, (_, i) => addDays(start, i));
-const isFriday = (iso: string) => new Date(iso + "T00:00:00").getDay() === 5;
+const addDays = sharedAddDays;
+const covered = (start: string, code: string) => coveredDates(start, spanDays(code));
+const isFriday = sharedIsFriday;
 const fmtDay = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
@@ -124,8 +125,11 @@ function updateSpanNote() {
     days.length === 1 ? `Covers ${fmtDay(days[0]!)}.` : `Covers ${fmtDay(days[0]!)} to ${fmtDay(days[days.length - 1]!)}.`;
   if (planSelect.value === "weekend") text += " Collect Friday, return Monday morning.";
   spanNote.textContent = text;
+  dateClash = clash;
   const conflictEl = document.getElementById("est-conflict");
   if (conflictEl) conflictEl.hidden = !clash;
+  const submit = document.querySelector<HTMLButtonElement>("#enquiry-form button[type=submit]");
+  if (submit) submit.disabled = clash;
 }
 
 function repaintCalendar() {
@@ -317,6 +321,12 @@ if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!result) return;
+    if (dateClash) {
+      result.textContent = "Those dates are unavailable; please pick different dates on the calendar.";
+      result.className = "enq-err";
+      result.hidden = false;
+      return;
+    }
     result.hidden = true;
     if (submitBtn) {
       submitBtn.disabled = true;

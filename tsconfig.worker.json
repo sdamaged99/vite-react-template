@@ -4,7 +4,9 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noEmit": false,
@@ -13,7 +15,12 @@
     "outDir": "node_modules/.tsbuild/worker",
     "skipLibCheck": true,
     "isolatedModules": true,
-    "types": ["@cloudflare/workers-types"]
+    "types": [
+      "@cloudflare/workers-types"
+    ]
   },
-  "include": ["worker"]
+  "include": [
+    "worker",
+    "shared"
+  ]
 }

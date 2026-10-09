@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { lastDay, spanDaysFor, todayIoM } from "../../shared/booking";
 import { sendMail } from "../lib/smtp";
 import type { AppBindings, Env } from "../types";
 
@@ -105,7 +106,7 @@ publicRoutes.post("/enquiry", async (c) => {
   if (name.length < 2) return c.json({ error: "Please tell us your name." }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ error: "That email address doesn't look right." }, 400);
   if (phone.length < 6) return c.json({ error: "Please include a phone number." }, 400);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(preferredStart) || preferredStart < new Date().toISOString().slice(0, 10)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(preferredStart) || preferredStart < todayIoM()) {
     return c.json({ error: "Please pick a start date from today onwards." }, 400);
   }
   if (!["collect", "deliver"].includes(fulfilment)) return c.json({ error: "Please choose collection or delivery." }, 400);
@@ -113,9 +114,20 @@ publicRoutes.post("/enquiry", async (c) => {
     return c.json({ error: "For delivery, please include your area and address." }, 400);
   }
   const planRow = await c.env.DB.prepare(
-    "SELECT label, price_pence FROM rate_plans WHERE code = ? AND active = 1",
-  ).bind(plan).first<{ label: string; price_pence: number }>();
+    "SELECT label, price_pence, duration_hours FROM rate_plans WHERE code = ? AND active = 1",
+  ).bind(plan).first<{ label: string; price_pence: number; duration_hours: number }>();
   if (!planRow) return c.json({ error: "Please choose a hire length." }, 400);
+
+  // The whole hire span (including the weekend Monday return day) must be
+  // free of confirmed bookings and owner blocks. Pending enquiries do not
+  // block availability by design.
+  const spanEnd = lastDay(preferredStart, spanDaysFor(plan, planRow.duration_hours));
+  const clash = await c.env.DB.prepare(
+    "SELECT 1 AS x FROM diary WHERE start_date <= ? AND end_date >= ? LIMIT 1",
+  ).bind(spanEnd, preferredStart).first();
+  if (clash) {
+    return c.json({ error: "Those dates are no longer available. Please pick different dates on the calendar." }, 409);
+  }
 
   const human = await verifyTurnstile(c.env, str(body.turnstile_token, 2048), c.req.header("CF-Connecting-IP"));
   if (!human) return c.json({ error: "Verification failed; please try again." }, 400);
