@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "sparkle-carpets",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "bd084e6b-7008-4f3d-b434-d38136f0d316",
       "migrations_dir": "db/migrations"
     }
   ],
