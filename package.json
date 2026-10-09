@@ -13,16 +13,12 @@
     "db:migrate:remote": "wrangler d1 migrations apply sparkle-carpets --remote"
   },
   "dependencies": {
-    "hono": "^4.8.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "hono": "^4.8.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.9.0",
     "@cloudflare/workers-types": "^4.20250620.0",
     "@tailwindcss/vite": "^4.1.11",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",

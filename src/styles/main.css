@@ -122,6 +122,51 @@
     @apply text-ink-soft;
   }
 
+  /* Availability calendar (read-only) */
+  .cal-month {
+    @apply grid gap-2;
+  }
+  .cal-title {
+    @apply text-[15px] font-bold;
+  }
+  .cal-grid {
+    @apply grid grid-cols-7 gap-1 text-center text-[13px] tabular-nums;
+  }
+  .cal-dow {
+    @apply text-[11px] font-bold text-ink-soft;
+  }
+  .cal-day {
+    @apply rounded-md py-1.5;
+  }
+  .cal-free {
+    @apply bg-card border border-line;
+  }
+  .cal-busy {
+    @apply bg-ink-soft/80 text-linen line-through;
+  }
+  .cal-past {
+    @apply text-ink-soft/50;
+  }
+
+  /* Enquiry form */
+  .field {
+    @apply grid gap-1 text-[14px] font-semibold;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    @apply rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[15px] font-normal text-ink;
+  }
+  .enq-ok {
+    @apply rounded-xl border border-chambray-deep bg-rec px-5 py-4 text-[15px];
+  }
+  .enq-err {
+    @apply rounded-xl border border-[#b3564f] bg-[#f7e9e7] px-5 py-4 text-[15px];
+  }
+  .draft-banner {
+    @apply mb-8 rounded-xl border-2 border-dashed border-chambray-deep bg-rec px-5 py-3.5 text-[14.5px] font-semibold;
+  }
+
   /* FAQ accordions */
   .faq-item {
     @apply mb-3 overflow-hidden rounded-[14px] border border-line bg-card;

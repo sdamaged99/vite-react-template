@@ -336,20 +336,92 @@
         </div>
       </section>
 
-      <!-- Booking band -->
+      <!-- Enquiry -->
       <section id="book" class="pb-14">
         <div class="shell">
-          <div class="grid justify-items-start gap-3.5 rounded-2xl bg-oat px-8 py-10">
-            <h2 class="max-w-[22ch] text-[clamp(24px,3vw,32px)]">See which dates are free</h2>
-            <p class="max-w-[52ch] text-[15.5px] text-ink-soft">
-              The booking calendar will live right here: pick your dates, choose collection or delivery, and you're
-              done in a couple of minutes. Pay nothing until handover.
-            </p>
-            <div id="island-availability" class="w-full max-w-[560px]"></div>
-            <div class="flex flex-wrap items-center gap-4">
-              <a class="btn" href="#book">Check availability</a>
-              <span class="ph">booking calendar, phase 2</span>
+          <div class="grid gap-10 rounded-2xl bg-oat px-7 py-10 md:grid-cols-[1fr_1.1fr] md:px-10">
+            <div class="grid content-start gap-4">
+              <h2 class="max-w-[22ch] text-[clamp(24px,3vw,32px)]">Check availability &amp; enquire</h2>
+              <p class="max-w-[46ch] text-[15px] text-ink-soft">
+                Days struck through are already taken. Send your preferred dates and we'll reply personally, usually
+                the same day, to confirm and arrange everything. Nothing is booked or paid until we've confirmed with
+                you.
+              </p>
+              <div id="availability-cal" class="grid gap-5 sm:grid-cols-2">
+                <p class="text-[14px] text-ink-soft sm:col-span-2">
+                  The live calendar loads here; if it doesn't, just send the enquiry and we'll confirm availability by
+                  email.
+                </p>
+              </div>
+              <p id="cal-legend" hidden class="text-[12.5px] text-ink-soft">Struck-through days are unavailable.</p>
+              <div class="flex flex-wrap gap-3 text-[14.5px]">
+                <span>Prefer to talk? <a class="font-semibold text-ink" href="mailto:bookings@sparklecarpets.im">bookings@sparklecarpets.im</a></span>
+                <a data-whatsapp hidden class="font-semibold text-chambray-deep no-underline" href="#" rel="noopener">Message us on WhatsApp</a>
+              </div>
             </div>
+
+            <form id="enquiry-form" class="grid content-start gap-3.5" novalidate>
+              <div class="grid gap-3.5 sm:grid-cols-2">
+                <label class="field">Your name
+                  <input name="name" required autocomplete="name" maxlength="100" />
+                </label>
+                <label class="field">Phone
+                  <input name="phone" type="tel" required autocomplete="tel" maxlength="40" />
+                </label>
+              </div>
+              <label class="field">Email
+                <input name="email" type="email" required autocomplete="email" maxlength="200" />
+              </label>
+              <div class="grid gap-3.5 sm:grid-cols-2">
+                <label class="field">Preferred start date
+                  <input id="enq-start" name="preferred_start" type="date" required />
+                </label>
+                <label class="field">Hire length
+                  <select id="enq-plan" name="rate_plan_code" required>
+                    <option value="24h">24-hour hire</option>
+                    <option value="48h" selected>48-hour hire</option>
+                    <option value="weekend">Weekend hire</option>
+                    <option value="3day">3-day hire</option>
+                    <option value="week">Weekly hire</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">Collection or delivery
+                <select id="enq-fulfilment" name="fulfilment_pref">
+                  <option value="collect" selected>I'll collect and return it (free, Castletown, by arrangement)</option>
+                  <option value="deliver">Deliver to me (priced by area)</option>
+                </select>
+              </label>
+              <div id="enq-delivery-fields" hidden class="grid gap-3.5">
+                <label class="field">Your area
+                  <select id="enq-area" name="area">
+                    <option value="Castletown">Castletown</option>
+                    <option value="Ballasalla, Derbyhaven">Ballasalla, Derbyhaven</option>
+                    <option value="Port Erin, Port St Mary, Colby">Port Erin, Port St Mary, Colby</option>
+                    <option value="Ballabeg, Santon">Ballabeg, Santon</option>
+                    <option value="Douglas, Braddan, Onchan">Douglas, Braddan, Onchan</option>
+                    <option value="Peel, St John's, Laxey">Peel, St John's, Laxey</option>
+                    <option value="Kirk Michael, Sulby, Ballaugh">Kirk Michael, Sulby, Ballaugh</option>
+                    <option value="Ramsey, Andreas, Jurby">Ramsey, Andreas, Jurby</option>
+                  </select>
+                </label>
+                <label class="field">Delivery address
+                  <input name="address" autocomplete="street-address" maxlength="300" />
+                </label>
+              </div>
+              <label class="field">Anything else? <span class="font-normal text-ink-soft">(optional)</span>
+                <textarea name="message" rows="3" maxlength="1000"></textarea>
+              </label>
+              <input name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+              <div id="turnstile-slot"></div>
+              <p class="text-[12.5px] text-ink-soft">
+                By sending an enquiry you agree to us using these details to respond, as described in our
+                <a href="/privacy/" class="text-ink">privacy notice</a>. Hire is subject to our
+                <a href="/terms/" class="text-ink">hire terms</a>.
+              </p>
+              <button type="submit" class="btn justify-self-start">Send enquiry</button>
+            </form>
+            <p id="enquiry-result" hidden class="md:col-span-2"></p>
           </div>
         </div>
       </section>
@@ -368,15 +440,17 @@
           <p class="max-w-[38ch]">Professional carpet cleaner hire for homes across the Isle of Man. Independent and locally owned.</p>
         </div>
         <ul class="grid list-none gap-2 p-0">
-          <li>bookings@sparklecarpets.im</li>
-          <li><span class="ph">phone tbc</span></li>
+          <li><a class="text-foot-text no-underline hover:text-linen" href="mailto:bookings@sparklecarpets.im">bookings@sparklecarpets.im</a></li>
+          <li><a data-whatsapp hidden class="text-foot-text no-underline hover:text-linen" href="#" rel="noopener">WhatsApp us</a></li>
+          <li>Collection: Castletown, by arrangement</li>
           <li>Operating area: Isle of Man</li>
         </ul>
         <ul class="grid list-none gap-2 p-0">
           <li><a class="text-foot-text no-underline hover:text-linen" href="#faq">FAQs</a></li>
           <li><a class="text-foot-text no-underline hover:text-linen" href="#prices">Prices</a></li>
-          <li><a class="text-foot-text no-underline hover:text-linen" href="#">Rental terms</a> <span class="ph">tbc</span></li>
-          <li><a class="text-foot-text no-underline hover:text-linen" href="#">Privacy policy</a> <span class="ph">tbc</span></li>
+          <li><a class="text-foot-text no-underline hover:text-linen" href="/terms/">Hire terms</a></li>
+          <li><a class="text-foot-text no-underline hover:text-linen" href="/instructions/">Using the machine</a></li>
+          <li><a class="text-foot-text no-underline hover:text-linen" href="/privacy/">Privacy notice</a></li>
         </ul>
       </div>
       <div class="shell mt-7 grid max-w-[80ch] gap-1.5 border-t border-foot-line pt-4 text-[12.5px]">

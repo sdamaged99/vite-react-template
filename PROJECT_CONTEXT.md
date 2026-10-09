@@ -32,18 +32,16 @@ Sparkle Carpets is Amanda's Isle of Man side business hiring out one BISSELL Big
 | 13 | Typography: Fraunces (display, optical sizing) + Figtree (body), Oct 2026 | Chosen from seven specimens as the soft-editorial direction; replaced the launch pairing Young Serif + Karla, which was limited to one display weight. |
 | 12 | Visual identity: "fresh linen boutique" (design Concept B, Oct 2026) | Chambray blue + oat + ink-navy palette (no green, no terracotta), arched "doorway" photo frames and circular IoM stamp as the graphic language, Young Serif display with Karla body, café-menu price presentation. Chosen over an editorial concept (too photography-dependent) and a conversion-panel concept (least distinctive); the booking-panel hero idea from the latter is earmarked for Phase 2. Real lifestyle and product photography still required; all image slots carry shot direction. |
 
-## Phases
+| 16 | Descope to an enquiry-based service (Oct 2026) | A handful of bookings a month doesn't justify a reservation engine. Customers send an enquiry (form → email via the business's own NethServer over SMTP from the Worker, copy kept in `enquiries`); Amanda confirms by email/WhatsApp, takes payment at handover, and records dates in a simple `diary` that drives the public availability calendar and her one admin page behind Cloudflare Access. Dropped: online payments, deposits automation, holds/expiry, R2 evidence, damage reports, reporting, the large dashboard, and the React dependency (vanilla JS only). The richer bookings/payments tables stay dormant as an upgrade path. WhatsApp button hidden until a verified number is set in settings. |
 
-1. **Website and branding** — this scaffold: public site, identity, pricing presentation, docs. ← current
-2. **Booking engine** — availability API, booking request flow with Turnstile, hold expiry via scheduled Worker, admin dashboard behind Access.
-3. **Payments and notifications** — transactional email (confirmation, collection instructions, return reminder, cancellation, new-booking alert to Amanda); online payment only if demand justifies it.
-4. **Security and production readiness** — concurrency tests on the booking window, cancellation paths, expiry runs, auth checks, restore drill, rollback drill.
+## Current shape (post-descope)
+
+Public site (home + terms + instructions + privacy) → enquiry form → email to bookings@ via self-hosted SMTP, stored in `enquiries` → Amanda replies by email/WhatsApp, agrees payment at handover → she records dates at `/admin/` (Cloudflare Access) in `diary` → the homepage calendar shows those dates as taken.
 
 ## Open items before launch
 
-- Real prices, deposit amount, delivery charge, handover times and location (Amanda).
-- Verified Big Green model designation and specs.
-- Photography.
-- Rental terms and privacy policy text (damage liability, late return, cancellation cut-offs).
-- Check whether registration with the IoM Information Commissioner is required.
-- Confirm liability insurance for hired-out equipment.
+- Approve the draft hire terms and privacy notice (cancellation window and retention periods are bracketed; legal/proprietor identity to confirm) and remove the draft banners.
+- Configure: Cloudflare Access app for `/admin/`; SMTP secrets for the NethServer; Turnstile keys; WhatsApp number in `settings` when verified.
+- Apply migration 0004.
+- Photograph the actual Big Green for the machine section; verify its specs.
+- Confirm liability insurance and whether IoM Information Commissioner registration is required.

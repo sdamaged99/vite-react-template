@@ -12,19 +12,9 @@
 - Rollback: `npx wrangler deployments list` then `npx wrangler rollback` to the previous version. Static assets and Worker roll back together.
 - Database migrations do not roll back automatically; write a compensating migration.
 
-## Email and DNS
+## Email
 
-Two senders will share sparklecarpets.im:
-
-1. **NethServer 8** hosts the `bookings@` mailbox for ordinary correspondence.
-2. **Resend** (Phase 3) sends automated transactional mail via API from the Worker.
-
-DNS requirements when Phase 3 lands:
-
-- SPF: one merged record including both senders, e.g. `v=spf1 include:<nethserver-sender> include:resend's-spf -all` (exactly one SPF TXT record on the domain).
-- DKIM: separate selectors per sender (NethServer's own, plus the records Resend issues at verification).
-- DMARC: start at `p=none` with a monitoring address, tighten once reports are clean.
-- Keep API keys out of the frontend; `EMAIL_API_KEY` is a Worker secret.
+All mail goes through the business's own NethServer: the Worker submits enquiry notifications and customer acknowledgements over authenticated SMTP (465/587) using a dedicated mailbox, so SPF/DKIM/DMARC are whatever the NethServer already publishes and no third-party sender exists. Credentials are Worker secrets (`SMTP_*`, `MAIL_*`; see README). If a send fails, the enquiry is still stored and flagged "not emailed" on the admin page, so check there whenever the mail server has been down.
 
 ## Routine maintenance
 
@@ -39,5 +29,5 @@ DNS requirements when Phase 3 lands:
 | /api/* returning 500 | Worker logs (observability is enabled), recent deploy, D1 binding present |
 | Admin 401 for Amanda | Access policy includes her email; `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` match the Access app; JWT header reaching the Worker |
 | Admin 503 | Access vars unset; admin is fail-closed by design |
-| Emails missing (Phase 3) | Resend dashboard delivery log, SPF/DKIM alignment, spam folder |
-| Double-booking reported | Should be impossible via the conditional insert; check for manual SQL writes and `blocked_dates` gaps |
+| Enquiry emails missing | Admin page "not emailed" flags, NethServer mail log, SMTP secrets set, spam folder |
+| Calendar not showing busy dates | `/api/unavailable` response; diary entries' date ranges |

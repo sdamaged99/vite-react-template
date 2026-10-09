@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sparkle Admin</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='8' fill='%232a3340'/%3E%3Crect x='13' y='2' width='6' height='28' fill='%237e9bb4'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Figtree:wght@400;600;700&display=swap" />
+    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/admin.ts"></script>
+  </head>
+  <body>
+    <header class="border-b border-line bg-linen">
+      <div class="shell flex items-center gap-2.5 py-3">
+        <span class="flex items-center gap-2.5 font-display text-[19px] text-ink">
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" fill="var(--color-ink)" /><rect x="13" y="2" width="6" height="28" fill="var(--color-chambray)" /></svg>
+          Sparkle Admin
+        </span>
+        <span id="whoami" class="ml-auto text-[13.5px] text-ink-soft"></span>
+      </div>
+    </header>
+    <main class="shell grid max-w-[900px] gap-10 py-8">
+      <p id="admin-error" hidden class="enq-err"></p>
+
+      <section class="grid gap-4">
+        <h1 class="text-[26px]">Availability diary</h1>
+        <p class="text-[14px] text-ink-soft">Add a booking or block dates; they show as unavailable on the website straight away. Cover turnaround time in the dates you enter.</p>
+        <form id="diary-form" class="grid gap-3 rounded-xl border border-line bg-card p-4 sm:grid-cols-2">
+          <label class="field">First day
+            <input name="start_date" type="date" required />
+          </label>
+          <label class="field">Last day <span class="font-normal text-ink-soft">(same as first for one day)</span>
+            <input name="end_date" type="date" />
+          </label>
+          <label class="field">Type
+            <select name="kind">
+              <option value="booking" selected>Booking</option>
+              <option value="blocked">Blocked (maintenance / away)</option>
+            </select>
+          </label>
+          <label class="field">Customer / label
+            <input name="name" maxlength="100" />
+          </label>
+          <label class="field sm:col-span-2">Note <span class="font-normal text-ink-soft">(optional: phone, price agreed, delivery)</span>
+            <input name="note" maxlength="300" />
+          </label>
+          <button type="submit" class="btn justify-self-start sm:col-span-2">Add to diary</button>
+        </form>
+        <div id="diary-list" class="grid gap-2"></div>
+      </section>
+
+      <section class="grid gap-4">
+        <h2 class="text-[22px]">Enquiries</h2>
+        <p class="text-[14px] text-ink-soft">The last 100 enquiries, newest first. "Not emailed" means the notification email failed and only this copy exists.</p>
+        <div id="enquiry-list" class="grid gap-3"></div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -14,9 +14,11 @@ Conventions: timestamps are ISO 8601 UTC text; money is integer pence; booleans 
 | `rate_plans` | Configurable durations and prices per machine (24h, 48h, weekend, week). |
 | `addons` | Optional extras (cleaning solution). |
 | `customers` | Contact details captured with a booking request. |
-| `bookings` | One row per request. `buffer_until` = `end_at` + turnaround buffer and is what availability checks against. `hold_expires_at` drives auto-expiry of unanswered requests. `fulfilment` is one of `self`, `delivery_only`, `collection_only`, `both`; `transport_pence` (zone price, Amanda's manual `delivery_quote_pence`, or 0 when waived) is itemised separately from hire and deposit; `delivery_status` (`requested` → `confirmed`/`declined`) records Amanda's decision, and no delivery time is promised until she confirms. Rebuilt in migration 0003, pre-launch, while empty. |
+| `bookings` | Dormant since the Oct 2026 descope (kept as the upgrade path to a full reservation engine). One row per request. `buffer_until` = `end_at` + turnaround buffer and is what availability checks against. `hold_expires_at` drives auto-expiry of unanswered requests. `fulfilment` is one of `self`, `delivery_only`, `collection_only`, `both`; `transport_pence` (zone price, Amanda's manual `delivery_quote_pence`, or 0 when waived) is itemised separately from hire and deposit; `delivery_status` (`requested` → `confirmed`/`declined`) records Amanda's decision, and no delivery time is promised until she confirms. Rebuilt in migration 0003, pre-launch, while empty. |
 | `payments` | Handover payments and deposits: kinds `hire`, `deposit`, `deposit_refund`, `deduction`. Method `online` is reserved for a future provider. |
-| `blocked_dates` | Maintenance / personal blocks, managed by Amanda. |
+| `enquiries` | Every enquiry from the website form: contact details, preferred dates, fulfilment preference, status (`new`/`replied`/`closed`) and whether the notification email was accepted. The system of record if mail fails. |
+| `diary` | What actually drives availability: date ranges marked `booking` or `blocked`, added by Amanda at `/admin/`. The public calendar reads only the dates, never names. |
+| `blocked_dates` | Dormant (superseded by `diary`). |
 | `audit_log` | Significant admin and system events. |
 
 ## Booking status lifecycle
