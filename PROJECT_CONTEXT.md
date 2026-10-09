@@ -34,6 +34,8 @@ Sparkle Carpets is Amanda's Isle of Man side business hiring out one BISSELL Big
 
 | 16 | Descope to an enquiry-based service (Oct 2026) | A handful of bookings a month doesn't justify a reservation engine. Customers send an enquiry (form → email via the business's own NethServer over SMTP from the Worker, copy kept in `enquiries`); Amanda confirms by email/WhatsApp, takes payment at handover, and records dates in a simple `diary` that drives the public availability calendar and her one admin page behind Cloudflare Access. Dropped: online payments, deposits automation, holds/expiry, R2 evidence, damage reports, reporting, the large dashboard, and the React dependency (vanilla JS only). The richer bookings/payments tables stay dormant as an upgrade path. WhatsApp button hidden until a verified number is set in settings. |
 
+| 17 | Improvement pass A–G (Oct 2026, `improvements` branch) | Conversion-focused copy; IoM-local (DST-safe) booking dates with weekend spans covering the Monday return day, shared between Worker and browser (shared/booking.ts, tested); server-side overlap blocking for enquiries and atomic guarded confirmation; four fulfilment choices with zone pricing and individual quotes; extras; full due-at-handover estimate; honest email-failure handling with admin retry; one-tap confirm/decline/returned/deposit with audit trail; sourced BG10 facts; proposed policy terms marked awaiting approval. |
+
 ## Current shape (post-descope)
 
 Public site (home + terms + instructions + privacy) → enquiry form → email to bookings@ via self-hosted SMTP, stored in `enquiries` → Amanda replies by email/WhatsApp, agrees payment at handover → she records dates at `/admin/` (Cloudflare Access) in `diary` → the homepage calendar shows those dates as taken.
