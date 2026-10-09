@@ -27,6 +27,7 @@ Sparkle Carpets is Amanda's Isle of Man side business hiring out one BISSELL Big
 | 9 | Public site is light-theme only | Deliberate simplification for a marketing site specced as white/off-white; halves visual QA. |
 | 10 | Transactional email: Resend (Phase 3) | MailChannels' free Workers integration ended; Resend free tier covers this volume. Swappable. |
 | 11 | No invented content | Prices, photos, specs, policies and reviews that are not yet real carry a visible dashed "placeholder" marker so nothing fabricated ships unnoticed. |
+| 12 | Visual identity: "fresh linen boutique" (design Concept B, Oct 2026) | Chambray blue + oat + ink-navy palette (no green, no terracotta), arched "doorway" photo frames and circular IoM stamp as the graphic language, Young Serif display with Karla body, café-menu price presentation. Chosen over an editorial concept (too photography-dependent) and a conversion-panel concept (least distinctive); the booking-panel hero idea from the latter is earmarked for Phase 2. Real lifestyle and product photography still required; all image slots carry shot direction. |
 
 ## Phases
 

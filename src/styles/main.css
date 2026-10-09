@@ -1,23 +1,26 @@
 @import "tailwindcss";
 
 /*
-  Sparkle Carpets design tokens.
-  Light-only by deliberate choice for the public site (see PROJECT_CONTEXT.md).
+  Sparkle Carpets identity: "fresh linen boutique" (design Concept B).
+  Chambray blue + oat + ink-navy, arched photo frames as the recurring
+  graphic language, Young Serif display with Karla body.
+  Light-only by deliberate choice for the public site (PROJECT_CONTEXT.md).
 */
 @theme {
-  --color-ground: #fbfaf6;
-  --color-surface: #ffffff;
-  --color-panel: #f1f3ec;
-  --color-ink: #232b24;
-  --color-ink-soft: #5a6459;
-  --color-line: #e3e4db;
-  --color-sage: #5f7f57;
-  --color-sage-deep: #43603d;
-  --color-sage-tint: #e8eee3;
-  --color-focus: #2f4fa0;
+  --color-linen: #f5f3ee;
+  --color-oat: #ece7dc;
+  --color-ink: #2a3340;
+  --color-ink-soft: #64707e;
+  --color-chambray: #7e9bb4;
+  --color-chambray-deep: #4f6f8c;
+  --color-mist: #dce5ec;
+  --color-card: #fcfbf8;
+  --color-line: #dcd7cb;
+  --color-foot-line: #3b4654;
+  --color-foot-text: #c7d0db;
 
-  --font-display: "Bricolage Grotesque", Georgia, serif;
-  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-display: "Young Serif", Georgia, serif;
+  --font-body: "Karla", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
 @layer base {
@@ -30,42 +33,91 @@
     }
   }
   body {
-    @apply bg-ground font-body text-[16.5px] leading-relaxed text-ink antialiased;
+    @apply bg-linen font-body text-[17px] leading-relaxed text-ink antialiased;
   }
   h1,
   h2,
   h3 {
-    @apply font-display text-balance leading-[1.12];
+    @apply font-display font-normal text-balance leading-[1.12];
   }
   :focus-visible {
-    @apply rounded outline-[3px] outline-offset-2 outline-focus;
+    @apply rounded-md outline-[3px] outline-offset-2 outline-chambray-deep;
   }
 }
 
 @layer components {
   .shell {
-    @apply mx-auto max-w-[1100px] px-5;
-  }
-  .eyebrow {
-    @apply text-[12.5px] font-semibold uppercase tracking-[0.14em] text-sage;
+    @apply mx-auto max-w-[1080px] px-[22px];
   }
   .btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-transparent px-5 py-3 text-[15.5px] font-semibold no-underline transition-colors;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-ink bg-ink px-[26px] py-3.5 text-base font-bold text-linen no-underline transition-colors hover:border-chambray-deep hover:bg-chambray-deep;
   }
-  .btn-primary {
-    @apply bg-sage text-white hover:bg-sage-deep;
+  .btn-ghost {
+    @apply border-ink bg-transparent text-ink hover:border-ink hover:bg-mist hover:text-ink;
   }
-  .btn-quiet {
-    @apply border-line bg-surface text-ink hover:border-sage;
+  .nav-pill {
+    @apply rounded-full px-3.5 py-2 text-[15px] font-medium text-ink no-underline hover:bg-mist;
   }
-  .card {
-    @apply rounded-[14px] border border-line bg-surface transition-colors hover:border-sage;
-  }
-  /* Placeholder marker: every price, photo, spec or policy detail not yet real carries one. */
+  /* Placeholder marker: anything not yet real carries one, so nothing invented ships unnoticed. */
   .ph {
-    @apply inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-line bg-ground px-2 py-[3px] text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft;
+    @apply inline-flex items-center rounded-full border-[1.5px] border-dashed border-chambray bg-linen px-[9px] py-[2px] text-[11px] font-bold tracking-[0.09em] text-chambray-deep;
   }
-  .photo-frame {
-    @apply relative grid place-items-center overflow-hidden rounded-2xl border border-line bg-panel p-6 text-center;
+
+  /* Photography stand-in: layered wash + grain + shot direction.
+     Replace with real photographs; the markup stays identical. */
+  .shot {
+    @apply relative overflow-hidden;
+    background:
+      radial-gradient(110% 80% at 25% 10%, #afc2cf, transparent 60%),
+      radial-gradient(120% 95% at 80% 100%, #45566a, transparent 55%),
+      #7b8fa0;
+  }
+  .shot::after {
+    content: "";
+    @apply absolute inset-0 opacity-30 mix-blend-overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+  .arch {
+    border-radius: 300px 300px 18px 18px;
+  }
+  .arch-soft {
+    border-radius: 160px 160px 16px 16px;
+  }
+  .shot-note {
+    @apply absolute inset-x-4 bottom-3.5 z-[2] text-center text-[12.5px] italic leading-normal text-linen;
+  }
+  .shot-tag {
+    @apply absolute left-1/2 top-3.5 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full border border-linen/65 px-2.5 py-[3px] text-[10.5px] tracking-[0.12em] text-linen;
+  }
+
+  /* Wobbly underline accent */
+  .squig {
+    @apply relative inline-block whitespace-nowrap;
+  }
+  .squig::after {
+    content: "";
+    @apply absolute -bottom-1.5 left-0 right-0 h-2;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M0 7 Q 15 1 30 6 T 60 6 T 90 6 T 120 5' fill='none' stroke='%237E9BB4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+      no-repeat center / 100% 100%;
+  }
+
+  /* Café-menu price rows */
+  .menu-leader {
+    @apply flex-1 -translate-y-1 border-b-2 border-dotted border-line;
+  }
+
+  /* FAQ accordions */
+  .faq-item {
+    @apply mb-3 overflow-hidden rounded-[14px] border border-line bg-card;
+  }
+  .faq-item summary {
+    @apply flex cursor-pointer list-none items-center justify-between gap-4 px-[22px] py-[18px] font-bold [&::-webkit-details-marker]:hidden;
+  }
+  .faq-item summary::after {
+    content: "+";
+    @apply font-display text-xl text-chambray-deep;
+  }
+  .faq-item[open] summary::after {
+    content: "\2212";
   }
 }
