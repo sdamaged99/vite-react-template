@@ -1,0 +1,27 @@
+{
+  // Sparkle Carpets — Cloudflare Workers configuration.
+  // After `wrangler d1 create sparkle-carpets`, paste the real database_id below.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sparkle-carpets",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sparkle-carpets",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "db/migrations"
+    }
+  ],
+  "vars": {
+    // Cloudflare Access settings for the admin area (Phase 2).
+    // ACCESS_TEAM_DOMAIN e.g. "example.cloudflareaccess.com"; ACCESS_AUD from the Access application.
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+  },
+  "observability": { "enabled": true }
+}

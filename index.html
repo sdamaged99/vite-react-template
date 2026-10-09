@@ -1,14 +1,419 @@
 <!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Vite + React + TS</title>
-	</head>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carpet Cleaner Hire Isle of Man | Sparkle Carpets</title>
+    <meta
+      name="description"
+      content="Hire a professional BISSELL Big Green carpet cleaning machine on the Isle of Man. Simple online booking, collection or island-wide delivery, transparent pricing."
+    />
+    <link rel="canonical" href="https://sparklecarpets.im/" />
+    <meta property="og:title" content="Sparkle Carpets — Carpet Cleaner Hire, Isle of Man" />
+    <meta
+      property="og:description"
+      content="Professional carpet cleaner hire, made simple. Book online, collect or have it delivered anywhere on the Isle of Man."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sparklecarpets.im/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Cpath d='M13 1.5 15.6 10.4 24.5 13 15.6 15.6 13 24.5 10.4 15.6 1.5 13 10.4 10.4Z' fill='%235f7f57'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Sparkle Carpets",
+        "description": "Carpet cleaning machine hire on the Isle of Man.",
+        "url": "https://sparklecarpets.im/",
+        "email": "bookings@sparklecarpets.im",
+        "areaServed": { "@type": "Place", "name": "Isle of Man" }
+      }
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <header class="sticky top-0 z-50 border-b border-line bg-ground/90 backdrop-blur-md">
+      <div class="shell flex items-center gap-7 py-3.5">
+        <a href="#top" aria-label="Sparkle Carpets home" class="flex items-center gap-2.5 font-display text-xl font-bold text-ink no-underline">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true" class="shrink-0">
+            <path d="M13 1.5 L15.6 10.4 L24.5 13 L15.6 15.6 L13 24.5 L10.4 15.6 L1.5 13 L10.4 10.4 Z" fill="var(--color-sage)" />
+            <circle cx="21" cy="5" r="1.6" fill="var(--color-sage-deep)" />
+          </svg>
+          Sparkle Carpets
+        </a>
+        <nav aria-label="Main" class="ml-auto hidden gap-6 text-[15px] md:flex">
+          <a class="font-medium text-ink no-underline hover:text-sage-deep" href="#how">How it works</a>
+          <a class="font-medium text-ink no-underline hover:text-sage-deep" href="#machine">The machine</a>
+          <a class="font-medium text-ink no-underline hover:text-sage-deep" href="#pricing">Pricing</a>
+          <a class="font-medium text-ink no-underline hover:text-sage-deep" href="#faq">FAQs</a>
+        </nav>
+        <a class="btn btn-primary ml-auto px-4 py-2.5 md:ml-0" href="#book">Check availability</a>
+        <button
+          id="nav-toggle"
+          class="grid h-10 w-10 place-items-center rounded-lg border border-line md:hidden"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
+          aria-label="Open menu"
+        >
+          <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
+            <path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <nav id="mobile-nav" aria-label="Mobile" hidden class="border-t border-line md:hidden">
+        <div class="shell grid gap-1 py-3">
+          <a class="rounded-lg px-2 py-2 font-medium text-ink no-underline hover:bg-panel" href="#how">How it works</a>
+          <a class="rounded-lg px-2 py-2 font-medium text-ink no-underline hover:bg-panel" href="#machine">The machine</a>
+          <a class="rounded-lg px-2 py-2 font-medium text-ink no-underline hover:bg-panel" href="#pricing">Pricing</a>
+          <a class="rounded-lg px-2 py-2 font-medium text-ink no-underline hover:bg-panel" href="#faq">FAQs</a>
+        </div>
+      </nav>
+    </header>
 
-	<body>
-		<div id="root"></div>
-		<script type="module" src="/src/react-app/main.tsx"></script>
-	</body>
+    <main id="top">
+      <!-- Hero -->
+      <section class="shell grid items-center gap-12 py-12 md:grid-cols-[1.1fr_0.9fr] md:py-16" aria-label="Introduction">
+        <div class="grid justify-items-start gap-5">
+          <span class="eyebrow">Isle of Man · Carpet cleaner hire</span>
+          <h1 class="text-[clamp(34px,5.4vw,54px)] font-bold">
+            Professional carpet cleaner hire, <em class="not-italic text-sage">made simple.</em>
+          </h1>
+          <p class="max-w-[48ch] text-lg text-ink-soft">
+            Hire a professional-grade BISSELL Big Green carpet cleaning machine and refresh your carpets yourself, for a
+            fraction of the cost of a cleaning service. Book online, collect or have it delivered, and return it when
+            you're done.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <a class="btn btn-primary" href="#book">Check availability &amp; book</a>
+            <a class="btn btn-quiet" href="#pricing">See pricing</a>
+          </div>
+          <p class="text-sm text-ink-soft">
+            We hire out the machine; you do the cleaning. No experience needed, and we'll show you how it works at
+            handover.
+          </p>
+        </div>
+        <figure class="photo-frame aspect-[4/3]" aria-label="Photograph placeholder">
+          <span class="ph absolute left-3 top-3">Placeholder photo</span>
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true" class="opacity-90">
+            <rect x="8" y="14" width="56" height="44" rx="6" stroke="var(--color-sage)" stroke-width="3" />
+            <circle cx="26" cy="32" r="6" stroke="var(--color-sage)" stroke-width="3" />
+            <path d="M14 52 L32 38 L44 48 L54 40 L62 46" stroke="var(--color-sage)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <figcaption class="max-w-[28ch] text-sm text-ink-soft">
+            Final site: the machine in use on a real living-room carpet, natural light.
+          </figcaption>
+        </figure>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="border-t border-line py-16" aria-label="How it works">
+        <div class="shell">
+          <div class="mb-10 grid max-w-[620px] gap-2.5">
+            <span class="eyebrow">How it works</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">Clean carpets in three simple steps</h2>
+          </div>
+          <div class="grid gap-5 md:grid-cols-3">
+            <div class="card grid content-start gap-2.5 p-6">
+              <span class="grid h-[34px] w-[34px] place-items-center rounded-full bg-sage-tint font-display font-bold text-sage-deep">1</span>
+              <h3 class="text-[19px] font-semibold">Book your dates online</h3>
+              <p class="text-[15px] text-ink-soft">
+                Pick a 24-hour, 48-hour, weekend or weekly hire from the availability calendar and request your dates.
+                Amanda confirms your booking, usually the same day.
+              </p>
+            </div>
+            <div class="card grid content-start gap-2.5 p-6">
+              <span class="grid h-[34px] w-[34px] place-items-center rounded-full bg-sage-tint font-display font-bold text-sage-deep">2</span>
+              <h3 class="text-[19px] font-semibold">Collect, or we deliver</h3>
+              <p class="text-[15px] text-ink-soft">
+                Collect the machine at your booked time and pay at handover, or choose delivery to your door anywhere on
+                the Island for a small charge.
+              </p>
+            </div>
+            <div class="card grid content-start gap-2.5 p-6">
+              <span class="grid h-[34px] w-[34px] place-items-center rounded-full bg-sage-tint font-display font-bold text-sage-deep">3</span>
+              <h3 class="text-[19px] font-semibold">Clean and return</h3>
+              <p class="text-[15px] text-ink-soft">
+                Follow the simple instructions we provide, enjoy your refreshed carpets, then return the machine rinsed
+                and ready.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- The machine -->
+      <section id="machine" class="border-t border-line py-16" aria-label="The machine">
+        <div class="shell grid items-center gap-12 md:grid-cols-[0.9fr_1.1fr]">
+          <figure class="photo-frame aspect-square" aria-label="Photograph placeholder">
+            <span class="ph absolute left-3 top-3">Placeholder photo</span>
+            <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true" class="opacity-90">
+              <rect x="20" y="10" width="24" height="34" rx="5" stroke="var(--color-sage)" stroke-width="3" />
+              <path d="M24 44 L18 60 H54 L48 44" stroke="var(--color-sage)" stroke-width="3" stroke-linejoin="round" />
+              <path d="M32 20 H40 M32 27 H40" stroke="var(--color-sage)" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <figcaption class="max-w-[28ch] text-sm text-ink-soft">
+              Final site: studio-style product shot of the BISSELL Big Green.
+            </figcaption>
+          </figure>
+          <div class="grid gap-4">
+            <span class="eyebrow">The machine</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">The BISSELL Big Green, a serious deep cleaner</h2>
+            <p class="text-ink-soft">
+              This is the professional-grade machine, not the compact models sold in supermarkets. It pulls embedded
+              dirt, pet mess and old stains out of carpet fibres with powerful suction and rotating brushes, and it's
+              straightforward to use.
+            </p>
+            <ul class="grid list-none grid-cols-1 gap-3.5 p-0 sm:grid-cols-2">
+              <li class="card grid gap-0.5 p-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">Cleaning path</span>
+                <span class="font-semibold tabular-nums">Wide pro brush bar <span class="ph">Verify spec</span></span>
+              </li>
+              <li class="card grid gap-0.5 p-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">Tanks</span>
+                <span class="font-semibold tabular-nums">Large clean &amp; dirty tanks <span class="ph">Verify spec</span></span>
+              </li>
+              <li class="card grid gap-0.5 p-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">Condition</span>
+                <span class="font-semibold">Inspected after every hire</span>
+              </li>
+              <li class="card grid gap-0.5 p-4">
+                <span class="text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">Included</span>
+                <span class="font-semibold">Hose &amp; tools, quick-start guide</span>
+              </li>
+            </ul>
+            <p class="border-l-[3px] border-line pl-3 text-[13.5px] text-ink-soft">
+              Sparkle Carpets is an independent local business and is not affiliated with or endorsed by BISSELL. The
+              equipment is identified by its manufacturer and model for accuracy.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="border-t border-line py-16" aria-label="Pricing">
+        <div class="shell">
+          <div class="mb-10 grid max-w-[620px] gap-2.5">
+            <span class="eyebrow">Pricing</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">Simple, transparent hire rates</h2>
+            <p class="text-ink-soft">
+              All prices below are placeholders for the prototype. Cleaning solution is available as an add-on when you
+              book.
+            </p>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="card grid content-start gap-2 p-6">
+              <h3 class="text-[17px] font-semibold">24-hour hire</h3>
+              <span class="font-display text-[34px] font-bold tabular-nums">£00 <small class="font-body text-sm font-medium text-ink-soft">/ day</small></span>
+              <p class="text-sm text-ink-soft">Perfect for a single room or a quick refresh.</p>
+              <span class="ph justify-self-start">Placeholder price</span>
+            </div>
+            <div class="card relative grid content-start gap-2 border-sage p-6">
+              <span class="absolute -top-[11px] left-[18px] rounded-full bg-sage px-2.5 py-[3px] text-[11px] font-bold uppercase tracking-[0.08em] text-ground">Most popular</span>
+              <h3 class="text-[17px] font-semibold">48-hour hire</h3>
+              <span class="font-display text-[34px] font-bold tabular-nums">£00</span>
+              <p class="text-sm text-ink-soft">Time to do the whole house at your own pace.</p>
+              <span class="ph justify-self-start">Placeholder price</span>
+            </div>
+            <div class="card grid content-start gap-2 p-6">
+              <h3 class="text-[17px] font-semibold">Weekend hire</h3>
+              <span class="font-display text-[34px] font-bold tabular-nums">£00</span>
+              <p class="text-sm text-ink-soft">Collect Friday evening, return Monday morning.</p>
+              <span class="ph justify-self-start">Placeholder price</span>
+            </div>
+            <div class="card grid content-start gap-2 p-6">
+              <h3 class="text-[17px] font-semibold">Weekly hire</h3>
+              <span class="font-display text-[34px] font-bold tabular-nums">£00 <small class="font-body text-sm font-medium text-ink-soft">/ week</small></span>
+              <p class="text-sm text-ink-soft">For end-of-tenancy cleans and bigger jobs.</p>
+              <span class="ph justify-self-start">Placeholder price</span>
+            </div>
+          </div>
+          <p class="mt-7 flex flex-wrap items-baseline gap-3 rounded-xl border border-line bg-panel px-5 py-4 text-[15px]">
+            <strong>Refundable deposit:</strong> a security deposit is taken at handover and refunded in full when the
+            machine is returned clean and undamaged. <span class="ph">Placeholder terms</span>
+          </p>
+        </div>
+      </section>
+
+      <!-- Collection & delivery -->
+      <section class="border-t border-line py-16" aria-label="Collection and delivery">
+        <div class="shell">
+          <div class="mb-10 grid max-w-[620px] gap-2.5">
+            <span class="eyebrow">Collection &amp; delivery</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">Collect from us, or have it delivered</h2>
+          </div>
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card grid content-start gap-2.5 p-6">
+              <h3 class="text-[19px] font-semibold">Free collection</h3>
+              <p class="text-[15px] text-ink-soft">
+                Collect the machine from us at your booked time slot. It fits comfortably in most car boots, and we'll
+                help you load it and show you how everything works. <span class="ph">Location &amp; times TBC</span>
+              </p>
+            </div>
+            <div class="card grid content-start gap-2.5 p-6">
+              <h3 class="text-[19px] font-semibold">Island-wide delivery</h3>
+              <p class="text-[15px] text-ink-soft">
+                Prefer it brought to you? We deliver and collect anywhere on the Isle of Man for a small additional
+                charge, arranged when you book. <span class="ph">Delivery charge TBC</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="border-t border-line py-16" aria-label="Frequently asked questions">
+        <div class="shell">
+          <div class="mb-10 grid max-w-[620px] gap-2.5">
+            <span class="eyebrow">FAQs</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">Good to know before you book</h2>
+          </div>
+          <div class="max-w-[720px] overflow-hidden rounded-[14px] border border-line bg-surface">
+            <details class="group">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Do you clean the carpets for me?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                No, Sparkle Carpets is an equipment hire service. You hire the machine and do the cleaning yourself,
+                which is what keeps the cost so low. It's easy, and full instructions are included.
+              </p>
+            </details>
+            <details class="group border-t border-line">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                I've never used a carpet cleaner. Is it difficult?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                Not at all. You fill the tank, switch it on and make slow passes over the carpet, a bit like vacuuming.
+                We include a quick-start guide and run through it with you at handover.
+              </p>
+            </details>
+            <details class="group border-t border-line">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Is cleaning solution included?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                Carpet cleaning solution is available as an optional add-on when you book, so you have everything you
+                need in one go. <span class="ph">Pricing TBC</span>
+              </p>
+            </details>
+            <details class="group border-t border-line">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                How do payment and the deposit work?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                You book your dates online and pay at handover by card or bank transfer. A refundable security deposit
+                is taken at the same time and returned in full once the machine comes back clean and undamaged.
+              </p>
+            </details>
+            <details class="group border-t border-line">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Will it fit in my car?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                Yes, the machine fits in the boot of most hatchbacks and larger cars. If you'd rather not move it
+                yourself, choose delivery when you book.
+              </p>
+            </details>
+            <details class="group border-t border-line">
+              <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
+                Can I cancel or change my booking?
+                <span class="font-display text-xl text-sage group-open:hidden">+</span><span class="hidden font-display text-xl text-sage group-open:inline">–</span>
+              </summary>
+              <p class="max-w-[62ch] px-5 pb-5 text-[15px] text-ink-soft">
+                Yes, bookings can be cancelled or moved in line with the cancellation policy shown when you book.
+                <span class="ph">Placeholder policy</span>
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reviews -->
+      <section class="border-t border-line py-16" aria-label="Reviews">
+        <div class="shell">
+          <div class="mb-10 grid max-w-[620px] gap-2.5">
+            <span class="eyebrow">Reviews</span>
+            <h2 class="text-[clamp(26px,4vw,36px)] font-semibold">What customers say</h2>
+          </div>
+          <div class="grid max-w-[640px] gap-2 rounded-[14px] border border-line bg-panel p-7">
+            <strong>Reviews will appear here.</strong>
+            <p class="text-[15px] text-ink-soft">
+              Sparkle Carpets is a new, locally owned Isle of Man business. Genuine customer reviews will be shown here
+              as they come in; none are invented or pre-written.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Booking CTA band -->
+      <section id="book" class="border-t border-line py-16" aria-label="Book">
+        <div class="shell">
+          <div class="grid justify-items-center gap-4 rounded-[18px] border border-line bg-sage-tint px-6 py-11 text-center">
+            <span class="eyebrow">Ready when you are</span>
+            <h2 class="text-[clamp(24px,3.6vw,32px)] font-semibold">Check availability &amp; book online</h2>
+            <p class="max-w-[52ch] text-ink-soft">
+              The live booking calendar will sit here: pick your dates, choose collection or delivery, and request your
+              booking in a couple of minutes. Payment is taken at handover.
+            </p>
+            <div id="island-availability" class="w-full max-w-[560px]"></div>
+            <span class="ph">Booking calendar arrives in Phase 2</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mt-6 border-t border-line py-11 text-[14.5px]">
+      <div class="shell">
+        <div class="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div class="grid justify-items-start gap-2.5">
+            <a href="#top" class="flex items-center gap-2.5 font-display text-lg font-bold text-ink no-underline">
+              <svg width="22" height="22" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                <path d="M13 1.5 L15.6 10.4 L24.5 13 L15.6 15.6 L13 24.5 L10.4 15.6 L1.5 13 L10.4 10.4 Z" fill="var(--color-sage)" />
+              </svg>
+              Sparkle Carpets
+            </a>
+            <p class="max-w-[38ch] text-sm text-ink-soft">
+              Professional carpet cleaner hire for homes across the Isle of Man. Independent and locally owned.
+            </p>
+          </div>
+          <div>
+            <h4 class="mb-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-soft">Contact</h4>
+            <ul class="grid list-none gap-1.5 p-0">
+              <li>bookings@sparklecarpets.im</li>
+              <li><span class="ph">Phone TBC</span></li>
+              <li>Operating area: Isle of Man</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="mb-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-soft">Information</h4>
+            <ul class="grid list-none gap-1.5 p-0">
+              <li><a class="text-ink no-underline hover:text-sage-deep" href="#faq">FAQs</a></li>
+              <li><a class="text-ink no-underline hover:text-sage-deep" href="#pricing">Pricing</a></li>
+              <li><a class="text-ink no-underline hover:text-sage-deep" href="#">Rental terms</a> <span class="ph">TBC</span></li>
+              <li><a class="text-ink no-underline hover:text-sage-deep" href="#">Privacy policy</a> <span class="ph">TBC</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="mt-7 grid max-w-[76ch] gap-1.5 border-t border-line pt-5 text-[13px] text-ink-soft">
+          <p>© 2026 Sparkle Carpets, Isle of Man. All prices and details marked as placeholders are illustrative only.</p>
+          <p>
+            BISSELL and Big Green are trademarks of their respective owner. Sparkle Carpets is an independent equipment
+            hire business and is not affiliated with, endorsed by or connected to BISSELL.
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
 </html>

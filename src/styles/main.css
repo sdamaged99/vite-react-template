@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/*
+  Sparkle Carpets design tokens.
+  Light-only by deliberate choice for the public site (see PROJECT_CONTEXT.md).
+*/
+@theme {
+  --color-ground: #fbfaf6;
+  --color-surface: #ffffff;
+  --color-panel: #f1f3ec;
+  --color-ink: #232b24;
+  --color-ink-soft: #5a6459;
+  --color-line: #e3e4db;
+  --color-sage: #5f7f57;
+  --color-sage-deep: #43603d;
+  --color-sage-tint: #e8eee3;
+  --color-focus: #2f4fa0;
+
+  --font-display: "Bricolage Grotesque", Georgia, serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    @apply bg-ground font-body text-[16.5px] leading-relaxed text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-balance leading-[1.12];
+  }
+  :focus-visible {
+    @apply rounded outline-[3px] outline-offset-2 outline-focus;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto max-w-[1100px] px-5;
+  }
+  .eyebrow {
+    @apply text-[12.5px] font-semibold uppercase tracking-[0.14em] text-sage;
+  }
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-transparent px-5 py-3 text-[15.5px] font-semibold no-underline transition-colors;
+  }
+  .btn-primary {
+    @apply bg-sage text-white hover:bg-sage-deep;
+  }
+  .btn-quiet {
+    @apply border-line bg-surface text-ink hover:border-sage;
+  }
+  .card {
+    @apply rounded-[14px] border border-line bg-surface transition-colors hover:border-sage;
+  }
+  /* Placeholder marker: every price, photo, spec or policy detail not yet real carries one. */
+  .ph {
+    @apply inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-line bg-ground px-2 py-[3px] text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft;
+  }
+  .photo-frame {
+    @apply relative grid place-items-center overflow-hidden rounded-2xl border border-line bg-panel p-6 text-center;
+  }
+}

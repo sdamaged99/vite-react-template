@@ -1,90 +1,49 @@
-# React + Vite + Hono + Cloudflare Workers
+# Sparkle Carpets
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
+Equipment-hire website for sparklecarpets.im: React islands on a static marketing site, Hono API on Cloudflare Workers, D1 database.
 
-This template provides a minimal setup for building a React application with TypeScript and Vite, designed to run on Cloudflare Workers. It features hot module replacement, ESLint integration, and the flexibility of Workers deployments.
+## Prerequisites
 
-![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
+- Node.js 20+
+- A Cloudflare account with Workers and D1 enabled
+- `npx wrangler login` completed
 
-<!-- dash-content-start -->
+## Local development
 
-🚀 Supercharge your web development with this powerful stack:
-
-- [**React**](https://react.dev/) - A modern UI library for building interactive interfaces
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and development server
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
-
-### ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 📦 TypeScript support out of the box
-- 🛠️ ESLint configuration included
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Full-stack development setup
-- 🔎 Built-in Observability to monitor your Worker
-
-Get started in minutes with local development or deploy directly via the Cloudflare dashboard. Perfect for building modern, performant web applications at the edge.
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-To start a new project with this template, run:
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/vite-react-template
-```
-
-A live deployment of this template is available at:
-[https://react-vite-template.templates.workers.dev](https://react-vite-template.templates.workers.dev)
-
-## Development
-
-Install dependencies:
-
-```bash
+```sh
 npm install
-```
-
-Start the development server with:
-
-```bash
+cp .dev.vars.example .dev.vars
+npm run db:migrate:local
 npm run dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
+The Cloudflare Vite plugin runs the Worker and static assets together at the dev URL; `/api/health` confirms the API, `/api/rates` confirms D1.
 
-## Production
+## First-time Cloudflare setup
 
-Build your project for production:
+1. `npx wrangler d1 create sparkle-carpets` and paste the returned `database_id` into `wrangler.jsonc`.
+2. `npm run db:migrate:remote`
+3. Set production secrets as they become needed: `npx wrangler secret put EMAIL_API_KEY` etc.
+4. Cloudflare Access (admin area, Phase 2): create a self-hosted Access application covering `/admin` and `/api/admin/*` with a one-time-PIN policy for Amanda's email, then set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc` vars.
 
-```bash
-npm run build
-```
+## Deployment
 
-Preview your build locally:
+Preferred: connect the GitHub repository to Cloudflare Workers Builds (Workers & Pages → the worker → Settings → Builds). Pushes to `main` deploy automatically; pull requests get preview URLs. Manual fallback: `npm run deploy`.
 
-```bash
-npm run preview
-```
+DNS for sparklecarpets.im is already on Cloudflare; add the custom domain to the Worker under Settings → Domains & Routes.
 
-Deploy your project to Cloudflare Workers:
+## Scripts
 
-```bash
-npm run build && npm run deploy
-```
+| Script | Purpose |
+| --- | --- |
+| `npm run dev` | Local dev server (Worker + assets + HMR) |
+| `npm run build` | Production build to `dist/` |
+| `npm run typecheck` | TypeScript project check (app + worker) |
+| `npm run deploy` | Build and deploy with wrangler |
+| `npm run db:migrate:local` / `:remote` | Apply D1 migrations |
 
-Monitor your workers:
+## Repository documentation
 
-```bash
-npx wrangler tail
-```
-
-## Additional Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-- [React Documentation](https://reactjs.org/)
-- [Hono Documentation](https://hono.dev/)
+- `PROJECT_CONTEXT.md` — background, architecture and the decision log
+- `DATABASE.md` — schema, migrations and the overlap-prevention pattern
+- `OPERATIONS.md` — backups, email DNS, maintenance, rollback

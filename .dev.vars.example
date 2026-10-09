@@ -1,0 +1,12 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+# Secrets in production are set with `wrangler secret put <NAME>`.
+
+# Cloudflare Access (Phase 2 admin auth)
+ACCESS_TEAM_DOMAIN=""
+ACCESS_AUD=""
+
+# Transactional email (Phase 3) — e.g. Resend API key
+EMAIL_API_KEY=""
+
+# Cloudflare Turnstile (Phase 2 booking form)
+TURNSTILE_SECRET_KEY=""
