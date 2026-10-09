@@ -1,10 +1,14 @@
 import "./styles/main.css";
 import {
   addDays as sharedAddDays,
+  computeEstimate,
   coveredDates,
   isFriday as sharedIsFriday,
+  journeysFor,
   spanDaysFor,
   todayIoM,
+  transportPence,
+  type Fulfilment,
 } from "../shared/booking";
 
 // Set when Turnstile is configured in the Cloudflare dashboard; the Worker
@@ -90,25 +94,36 @@ function updateEstimate() {
     box.hidden = true;
     return;
   }
-  const hireEl = document.getElementById("est-hire");
-  const hireLabel = document.getElementById("est-hire-label");
-  const transportRow = document.getElementById("est-transport-row");
-  const transportEl = document.getElementById("est-transport");
-  const totalEl = document.getElementById("est-total");
-  const depositEl = document.getElementById("est-deposit");
-  if (hireLabel) hireLabel.textContent = rate.label;
-  if (hireEl) hireEl.textContent = gbp(rate.price_pence);
+  const f = (fulfilSelect?.value ?? "self") as Fulfilment;
+  const journeys = journeysFor(f);
+  const otherChosen = areaSelect?.value === "__other";
+  const zone =
+    journeys > 0 && !otherChosen ? (pricing?.delivery_zones.find((z) => z.areas === areaSelect?.value) ?? null) : null;
+  const transport = journeys === 0 ? 0 : otherChosen ? null : transportPence(f, zone);
+  const extrasPence = Array.from(
+    document.querySelectorAll<HTMLInputElement>('#enquiry-form input[name="extras"]:checked'),
+  ).map((el) => pricing?.addons.find((a) => a.code === el.value)?.price_pence ?? 0);
+  const est = computeEstimate({ hirePence: rate.price_pence, transportPence: transport, extrasPence, depositPence: deposit });
 
-  let transport = 0;
-  const delivering = fulfilSelect?.value === "deliver";
-  if (delivering && areaSelect) {
-    const zone = pricing?.delivery_zones.find((z) => z.areas === areaSelect.value);
-    if (zone) transport = zone.both_pence;
-  }
-  if (transportRow) transportRow.hidden = !delivering || transport === 0;
-  if (transportEl && transport > 0) transportEl.textContent = gbp(transport);
-  if (totalEl) totalEl.textContent = gbp(rate.price_pence + transport);
-  if (depositEl) depositEl.textContent = gbp(deposit);
+  const set = (id: string, text: string) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  set("est-hire-label", rate.label);
+  set("est-hire", gbp(est.hirePence));
+  const extrasRow = document.getElementById("est-extras-row");
+  if (extrasRow) extrasRow.hidden = est.extrasPence === 0;
+  set("est-extras", gbp(est.extrasPence));
+  const transportRow = document.getElementById("est-transport-row");
+  if (transportRow) transportRow.hidden = journeys === 0;
+  set(
+    "est-transport-label",
+    f === "deliver_only" ? "Delivery (one journey)" : f === "collect_only" ? "Collection (one journey)" : "Delivery & collection (both journeys)",
+  );
+  set("est-transport", est.transportQuoted ? "Quoted individually" : gbp(est.transportPence ?? 0));
+  set("est-deposit", gbp(est.depositPence));
+  set("est-due", est.dueAtHandoverPence === null ? "Confirmed with your quote" : gbp(est.dueAtHandoverPence));
+  set("est-eff", est.effectivePence === null ? "Confirmed with your quote" : gbp(est.effectivePence));
   box.hidden = false;
 }
 
@@ -289,12 +304,18 @@ async function hydrate() {
 /* -------------------------------------------------------- enquiry form ---- */
 if (form) {
   const deliveryFields = document.getElementById("enq-delivery-fields");
+  const otherWrap = document.getElementById("enq-other-wrap");
   const syncDelivery = () => {
-    if (deliveryFields && fulfilSelect) deliveryFields.hidden = fulfilSelect.value !== "deliver";
+    const f = (fulfilSelect?.value ?? "self") as Fulfilment;
+    if (deliveryFields) deliveryFields.hidden = journeysFor(f) === 0;
+    if (otherWrap) otherWrap.hidden = areaSelect?.value !== "__other";
     updateEstimate();
   };
   fulfilSelect?.addEventListener("change", syncDelivery);
-  areaSelect?.addEventListener("change", updateEstimate);
+  areaSelect?.addEventListener("change", syncDelivery);
+  for (const cb of document.querySelectorAll('#enquiry-form input[name="extras"]')) {
+    cb.addEventListener("change", updateEstimate);
+  }
   planSelect?.addEventListener("change", repaintCalendar);
   startInput?.addEventListener("change", repaintCalendar);
   syncDelivery();
@@ -333,20 +354,36 @@ if (form) {
       submitBtn.textContent = "Sending…";
     }
     const fd = new FormData(form);
-    const payload = Object.fromEntries(fd.entries());
-    (payload as Record<string, string>)["turnstile_token"] = turnstileToken;
+    const otherInput = document.getElementById("enq-other") as HTMLInputElement | null;
+    const rawArea = String(fd.get("area") ?? "");
+    const payload = {
+      name: fd.get("name"),
+      email: fd.get("email"),
+      phone: fd.get("phone"),
+      preferred_start: fd.get("preferred_start"),
+      rate_plan_code: fd.get("rate_plan_code"),
+      fulfilment: fd.get("fulfilment"),
+      area: rawArea === "__other" ? (otherInput?.value ?? "").trim() : rawArea,
+      address: fd.get("address"),
+      extras: fd.getAll("extras"),
+      message: fd.get("message"),
+      website: fd.get("website"),
+      turnstile_token: turnstileToken,
+    };
     try {
       const res = await fetch("/api/enquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; emailed?: boolean; error?: string };
       if (res.ok && data.ok) {
         form.hidden = true;
         result.textContent =
-          "Thanks — your enquiry is on its way. We'll check availability and reply personally, usually the same day. Nothing is booked or paid until we've confirmed with you.";
-        result.className = "enq-ok";
+          data.emailed === false
+            ? "Your enquiry has been saved, but our email notification failed, so we may not see it straight away. If you haven't heard from us within two days, please email bookings@sparklecarpets.im directly, quoting your name and dates."
+            : "Thanks — your enquiry is on its way. We'll check availability and reply personally, as soon as we can. Nothing is booked or paid until we've confirmed with you.";
+        result.className = data.emailed === false ? "enq-err" : "enq-ok";
       } else {
         result.textContent =
           data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.";

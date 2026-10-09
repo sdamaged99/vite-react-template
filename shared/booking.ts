@@ -78,12 +78,12 @@ export function overlapsAny(startIso: string, span: number, ranges: DateRange[])
 
 /* ------------------------------- transport ------------------------------- */
 
-export type Fulfilment = "self" | "deliver_only" | "collect_only" | "both" | "quote";
+export type Fulfilment = "self" | "deliver_only" | "collect_only" | "both";
 
-export const FULFILMENTS: Fulfilment[] = ["self", "deliver_only", "collect_only", "both", "quote"];
+export const FULFILMENTS: Fulfilment[] = ["self", "deliver_only", "collect_only", "both"];
 
-/** Charged journeys for a fulfilment choice; null = manual quotation. */
-export function journeysFor(f: Fulfilment): 0 | 1 | 2 | null {
+/** Charged journeys for a fulfilment choice. */
+export function journeysFor(f: Fulfilment): 0 | 1 | 2 {
   switch (f) {
     case "self":
       return 0;
@@ -92,8 +92,6 @@ export function journeysFor(f: Fulfilment): 0 | 1 | 2 | null {
       return 1;
     case "both":
       return 2;
-    case "quote":
-      return null;
   }
 }
 
@@ -102,9 +100,8 @@ export function transportPence(
   zone: { one_way_pence: number; both_pence: number } | null,
 ): number | null {
   const j = journeysFor(f);
-  if (j === null) return null; // quoted individually
   if (j === 0) return 0;
-  if (!zone) return null;
+  if (!zone) return null; // area outside the configured zones: quoted individually
   return j === 1 ? zone.one_way_pence : zone.both_pence;
 }
 

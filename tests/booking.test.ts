@@ -51,7 +51,6 @@ assert.equal(transportPence("self", null), 0);
 assert.equal(transportPence("deliver_only", zone), 2000);
 assert.equal(transportPence("collect_only", zone), 2000);
 assert.equal(transportPence("both", zone), 4000);
-assert.equal(transportPence("quote", zone), null);
 assert.equal(transportPence("both", null), null); // no zone chosen yet
 
 // --- estimate: deposit separate, totals as specified -----------------------

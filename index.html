@@ -407,9 +407,11 @@
                 </label>
               </div>
               <label class="field">Collection or delivery
-                <select id="enq-fulfilment" name="fulfilment_pref">
-                  <option value="collect" selected>I'll collect and return it (free, Castletown, by arrangement)</option>
-                  <option value="deliver">Deliver to me (priced by area)</option>
+                <select id="enq-fulfilment" name="fulfilment">
+                  <option value="self" selected>I'll collect and return it myself (free, Castletown)</option>
+                  <option value="deliver_only">Deliver it to me; I'll return it (one journey)</option>
+                  <option value="collect_only">I'll collect it; you fetch it back (one journey)</option>
+                  <option value="both">Deliver and collect it (both journeys)</option>
                 </select>
               </label>
               <div id="enq-delivery-fields" hidden class="grid gap-3.5">
@@ -423,23 +425,34 @@
                     <option value="Peel, St John's, Laxey">Peel, St John's, Laxey</option>
                     <option value="Kirk Michael, Sulby, Ballaugh">Kirk Michael, Sulby, Ballaugh</option>
                     <option value="Ramsey, Andreas, Jurby">Ramsey, Andreas, Jurby</option>
+                    <option value="__other">Other location — request a quote</option>
                   </select>
+                </label>
+                <label id="enq-other-wrap" hidden class="field">Your town or area
+                  <input id="enq-other" maxlength="100" placeholder="e.g. Maughold" />
                 </label>
                 <label class="field">Delivery address
                   <input name="address" autocomplete="street-address" maxlength="300" />
                 </label>
               </div>
+              <fieldset class="m-0 grid gap-2 border-0 p-0">
+                <legend class="mb-0.5 text-[14px] font-semibold">Optional extras</legend>
+                <label class="flex items-center gap-2.5 text-[14.5px]"><input type="checkbox" name="extras" value="solution" class="h-4 w-4 accent-[var(--color-chambray-deep)]" />Additional detergent portion (<span data-price-addon="solution">£5</span>)</label>
+                <label class="flex items-center gap-2.5 text-[14.5px]"><input type="checkbox" name="extras" value="upholstery_tool" class="h-4 w-4 accent-[var(--color-chambray-deep)]" />Upholstery &amp; stair attachment (<span data-price-addon="upholstery_tool">£5</span>, subject to availability)</label>
+              </fieldset>
               <label class="field">Anything else? <span class="font-normal text-ink-soft">(optional)</span>
                 <textarea name="message" rows="3" maxlength="1000"></textarea>
               </label>
-              <div id="estimate" hidden class="grid gap-1.5 rounded-xl border border-line bg-card px-4 py-3.5 text-[14px]">
+              <div id="estimate" hidden class="grid gap-1.5 rounded-xl border border-line bg-card px-4 py-3.5 text-[14px]" aria-live="polite">
                 <p class="text-[12px] font-bold uppercase tracking-[0.06em] text-ink-soft">Your estimate</p>
                 <div class="flex items-baseline gap-3"><span id="est-hire-label">Hire</span><span class="menu-leader"></span><span id="est-hire" class="font-semibold tabular-nums"></span></div>
-                <div id="est-transport-row" hidden class="flex items-baseline gap-3"><span>Delivery &amp; collection <small class="text-ink-soft">both journeys; one-way available, mention it in your message</small></span><span class="menu-leader"></span><span id="est-transport" class="font-semibold tabular-nums"></span></div>
-                <div class="flex items-baseline gap-3 border-t border-line pt-1.5"><span class="font-bold">Estimated total</span><span class="menu-leader"></span><span id="est-total" class="font-bold tabular-nums"></span></div>
-                <div class="flex items-baseline gap-3 text-ink-soft"><span>Plus refundable deposit, returned after inspection</span><span class="menu-leader"></span><span id="est-deposit" class="tabular-nums"></span></div>
+                <div id="est-extras-row" hidden class="flex items-baseline gap-3"><span>Optional extras</span><span class="menu-leader"></span><span id="est-extras" class="font-semibold tabular-nums"></span></div>
+                <div id="est-transport-row" hidden class="flex items-baseline gap-3"><span id="est-transport-label">Delivery &amp; collection</span><span class="menu-leader"></span><span id="est-transport" class="font-semibold tabular-nums"></span></div>
+                <div class="flex items-baseline gap-3 rounded-lg bg-rec px-2.5 py-1.5 text-chambray-deep"><span class="font-semibold">Refundable security deposit</span><span class="menu-leader"></span><span id="est-deposit" class="font-bold tabular-nums"></span></div>
+                <div class="flex items-baseline gap-3 border-t-2 border-line pt-2"><span class="text-[15px] font-bold">Total due at handover</span><span class="menu-leader"></span><span id="est-due" class="text-[15px] font-bold tabular-nums"></span></div>
+                <div class="flex items-baseline gap-3 text-ink-soft"><span>Effective hire cost after deposit refund</span><span class="menu-leader"></span><span id="est-eff" class="font-semibold tabular-nums"></span></div>
                 <p id="est-conflict" hidden class="font-semibold text-[#9c4038]">Those dates clash with an existing booking. Please pick different dates on the calendar.</p>
-                <p class="text-[12px] text-ink-soft">Estimate only; we confirm the exact price with your booking.</p>
+                <p class="text-[12px] text-ink-soft">Estimate only. No payment is taken online; all figures are confirmed with your booking.</p>
               </div>
               <input name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
               <div id="turnstile-slot"></div>

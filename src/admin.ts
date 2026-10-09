@@ -17,12 +17,15 @@ interface Enquiry {
   phone: string;
   preferred_start: string;
   rate_plan_code: string;
-  fulfilment_pref: string;
+  fulfilment: string;
   area: string | null;
   address: string | null;
+  extras: string;
+  estimate_total_pence: number | null;
   message: string | null;
-  status: "new" | "replied" | "closed";
+  status: "new" | "replied" | "confirmed" | "declined" | "closed";
   emailed: number;
+  email_error: string | null;
 }
 
 const errBox = document.getElementById("admin-error");
@@ -140,9 +143,12 @@ async function loadEnquiries() {
       top.append(name, status, when);
       const detail = document.createElement("p");
       detail.className = "text-ink-soft";
-      detail.textContent = `${q.rate_plan_code} from ${fmt(q.preferred_start)} · ${
-        q.fulfilment_pref === "deliver" ? `deliver: ${q.area ?? ""}, ${q.address ?? ""}` : "customer collects"
-      } · ${q.phone}`;
+      const extras = (JSON.parse(q.extras || "[]") as string[]).join(", ");
+      detail.textContent = `${q.rate_plan_code} from ${fmt(q.preferred_start)} · ${q.fulfilment}${
+        q.area ? `: ${q.area}` : ""
+      }${q.address ? `, ${q.address}` : ""} · ${q.phone}${extras ? ` · extras: ${extras}` : ""}${
+        q.estimate_total_pence != null ? ` · est. due £${(q.estimate_total_pence / 100).toFixed(0)}` : ""
+      }`;
       card.append(top, detail);
       if (q.message) {
         const msg = document.createElement("p");

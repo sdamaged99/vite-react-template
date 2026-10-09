@@ -57,7 +57,7 @@ adminRoutes.delete("/diary/:id", async (c) => {
 adminRoutes.get("/enquiries", async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id, created_at, name, email, phone, preferred_start, rate_plan_code,
-            fulfilment_pref, area, address, message, status, emailed
+            fulfilment, area, address, extras, estimate_total_pence, message, status, emailed, email_error
      FROM enquiries ORDER BY created_at DESC LIMIT 100`,
   ).all();
   return c.json({ enquiries: results });
@@ -67,7 +67,7 @@ adminRoutes.post("/enquiries/:id/status", async (c) => {
   const id = Number(c.req.param("id"));
   const body = (await c.req.json().catch(() => ({}))) as { status?: string };
   const status = body.status ?? "";
-  if (!Number.isInteger(id) || !["new", "replied", "closed"].includes(status)) {
+  if (!Number.isInteger(id) || !["new", "replied", "declined", "closed"].includes(status)) {
     return c.json({ error: "Bad request" }, 400);
   }
   await c.env.DB.prepare("UPDATE enquiries SET status = ? WHERE id = ?").bind(status, id).run();
