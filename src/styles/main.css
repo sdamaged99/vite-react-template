@@ -164,7 +164,8 @@
   .field input,
   .field select,
   .field textarea {
-    @apply rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[15px] font-normal text-ink;
+    /* 16px minimum stops iOS Safari zooming the page on focus */
+    @apply rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[16px] font-normal text-ink;
   }
   .enq-ok {
     @apply rounded-xl border border-chambray-deep bg-rec px-5 py-4 text-[15px];

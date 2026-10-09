@@ -161,7 +161,9 @@ function repaintCalendar() {
     } else if (free) {
       btn.disabled = false;
     }
-    if (range.includes(iso)) btn.classList.add(isBusy(iso) ? "cal-conflict" : "cal-sel");
+    const inRange = range.includes(iso);
+    if (inRange) btn.classList.add(isBusy(iso) ? "cal-conflict" : "cal-sel");
+    btn.setAttribute("aria-pressed", String(inRange && !isBusy(iso)));
   }
   updateSpanNote();
   updateEstimate();
@@ -216,6 +218,8 @@ async function renderCalendar() {
       if (!past && !taken) {
         cell.setAttribute("aria-label", `Start enquiry on ${fmtDay(iso)}`);
         cell.addEventListener("click", () => onDayClick(iso));
+      } else {
+        cell.setAttribute("aria-label", `${fmtDay(iso)} ${past ? "is in the past" : "is unavailable"}`);
       }
       grid.append(cell);
     }
@@ -307,8 +311,12 @@ if (form) {
   const otherWrap = document.getElementById("enq-other-wrap");
   const syncDelivery = () => {
     const f = (fulfilSelect?.value ?? "self") as Fulfilment;
-    if (deliveryFields) deliveryFields.hidden = journeysFor(f) === 0;
+    const needsTransport = journeysFor(f) > 0;
+    if (deliveryFields) deliveryFields.hidden = !needsTransport;
     if (otherWrap) otherWrap.hidden = areaSelect?.value !== "__other";
+    const addressInput = form?.querySelector<HTMLInputElement>('input[name="address"]');
+    if (addressInput) addressInput.required = needsTransport;
+    if (areaSelect) areaSelect.required = needsTransport;
     updateEstimate();
   };
   fulfilSelect?.addEventListener("change", syncDelivery);
