@@ -30,6 +30,8 @@ interface Enquiry {
   status: "new" | "replied" | "confirmed" | "declined" | "closed";
   emailed: number;
   email_error: string | null;
+  terms_version: string | null;
+  terms_accepted_at: string | null;
 }
 interface Activity {
   actor: string;
@@ -246,6 +248,12 @@ async function loadEnquiries() {
         q.estimate_total_pence != null ? ` · est. due £${(q.estimate_total_pence / 100).toFixed(0)} incl. deposit` : ""
       }`;
       card.append(detail);
+      const termsLine = document.createElement("p");
+      termsLine.className = "text-[12.5px] text-ink-soft";
+      termsLine.textContent = q.terms_version
+        ? `Terms v${q.terms_version} accepted ${new Date((q.terms_accepted_at ?? "") + "Z").toLocaleString("en-GB")}`
+        : "No terms record (enquiry predates terms acceptance)";
+      card.append(termsLine);
       if (q.message) {
         const msg = document.createElement("p");
         msg.textContent = `“${q.message}”`;

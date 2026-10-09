@@ -45,6 +45,12 @@ DNS for sparklecarpets.im is already on Cloudflare; add the custom domain to the
 | `npm run deploy` | Build and deploy with wrangler |
 | `npm run db:migrate:local` / `:remote` | Apply D1 migrations |
 
+## Publishing new hire terms
+
+1. Add the new wording as `terms/versions/vN.N.txt` (never edit an old version's file).
+2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` so it contains every version's text and SHA-256, with `CURRENT_TERMS` pointing at the new one.
+3. Update the `settings` key `terms_version`. Enquiries record the version and hash they accepted, and booking confirmations always embed the accepted version's text, so existing bookings are never moved onto newer terms.
+
 ## Repository documentation
 
 - `PROJECT_CONTEXT.md` — background, architecture and the decision log

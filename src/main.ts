@@ -375,6 +375,7 @@ if (form) {
       address: fd.get("address"),
       extras: fd.getAll("extras"),
       message: fd.get("message"),
+      terms_accepted: fd.get("terms_accepted") === "on",
       website: fd.get("website"),
       turnstile_token: turnstileToken,
     };

@@ -59,7 +59,8 @@ adminRoutes.delete("/diary/:id", async (c) => {
 adminRoutes.get("/enquiries", async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id, created_at, name, email, phone, preferred_start, rate_plan_code,
-            fulfilment, area, address, extras, estimate_total_pence, message, status, emailed, email_error
+            fulfilment, area, address, extras, estimate_total_pence, message, status, emailed, email_error,
+            terms_version, terms_accepted_at
      FROM enquiries ORDER BY created_at DESC LIMIT 100`,
   ).all();
   return c.json({ enquiries: results });
@@ -97,6 +98,7 @@ interface EnquiryRow {
   extras: string;
   message: string | null;
   status: string;
+  terms_version: string | null;
 }
 
 async function buildEmailData(db: D1Database, q: EnquiryRow): Promise<EnquiryEmailData | null> {
@@ -199,6 +201,7 @@ adminRoutes.post("/enquiries/:id/confirm", async (c) => {
     plan_label: plan.label,
     start: q.preferred_start,
     end,
+    terms_version: q.terms_version,
   });
   if (!sent.emailed) {
     await audit(c.env.DB, c.get("adminEmail"), "enquiry.confirm_email_failed", "enquiry", id, sent.error);

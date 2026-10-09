@@ -9,6 +9,7 @@ import {
   type Fulfilment,
 } from "../../shared/booking";
 import { sendEnquiryEmails, type EnquiryEmailData } from "../lib/notify";
+import { CURRENT_TERMS } from "../lib/terms";
 import type { AppBindings, Env } from "../types";
 
 export const publicRoutes = new Hono<AppBindings>();
@@ -76,6 +77,7 @@ interface EnquiryBody {
   address?: string;
   extras?: unknown;
   message?: string;
+  terms_accepted?: unknown;
   website?: string; // honeypot: must stay empty
   turnstile_token?: string;
 }
@@ -127,6 +129,11 @@ publicRoutes.post("/enquiry", async (c) => {
     return c.json({ error: "For delivery or collection by us, please include your area and address." }, 400);
   }
 
+  // Server-side acceptance check: the checkbox alone is never trusted.
+  if (body.terms_accepted !== true) {
+    return c.json({ error: "Please confirm you have read and agree to the Equipment Hire Terms & Conditions." }, 400);
+  }
+
   const planRow = await c.env.DB.prepare(
     "SELECT label, price_pence, duration_hours FROM rate_plans WHERE code = ? AND active = 1",
   ).bind(plan).first<{ label: string; price_pence: number; duration_hours: number }>();
@@ -173,8 +180,9 @@ publicRoutes.post("/enquiry", async (c) => {
   });
 
   const inserted = await c.env.DB.prepare(
-    `INSERT INTO enquiries (name, email, phone, preferred_start, rate_plan_code, fulfilment, area, address, extras, estimate_total_pence, message)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+    `INSERT INTO enquiries (name, email, phone, preferred_start, rate_plan_code, fulfilment, area, address, extras, estimate_total_pence, message,
+                             terms_version, terms_accepted_at, terms_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?) RETURNING id`,
   )
     .bind(
       name,
@@ -188,6 +196,8 @@ publicRoutes.post("/enquiry", async (c) => {
       JSON.stringify(extras.map((x) => x.code)),
       est.dueAtHandoverPence,
       message || null,
+      CURRENT_TERMS.version,
+      CURRENT_TERMS.sha256,
     )
     .first<{ id: number }>();
   if (!inserted) return c.json({ error: "We couldn't save your enquiry; please email bookings@sparklecarpets.im." }, 500);

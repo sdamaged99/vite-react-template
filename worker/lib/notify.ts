@@ -1,4 +1,5 @@
 import { sendMail, type SmtpConfig } from "./smtp";
+import { CURRENT_TERMS, termsText } from "./terms";
 import type { Env } from "../types";
 
 /** Everything the enquiry emails need; built once at submission and rebuilt
@@ -16,6 +17,7 @@ export interface EnquiryEmailData {
   address: string | null;
   extras: { label: string; price_pence: number }[];
   transport_pence: number | null; // null = quoted individually
+  terms_version?: string | null;
   deposit_pence: number;
   due_pence: number | null; // total due at handover incl deposit; null when quoted
   message: string | null;
@@ -59,6 +61,8 @@ export function notificationText(d: EnquiryEmailData): string {
     "",
     d.message ? `Message: ${d.message}` : "",
     "",
+    `Terms:   v${d.terms_version ?? CURRENT_TERMS.version} accepted by the customer at enquiry`,
+    "",
     "This is a PENDING enquiry. Confirm or decline it from the admin page;",
     "reply to this email to respond to the customer.",
   ].filter((l) => l !== "");
@@ -101,9 +105,12 @@ export async function sendEnquiryEmails(env: Env, d: EnquiryEmailData): Promise<
 /** Booking-confirmed email, sent only AFTER the diary entry is saved. */
 export async function sendConfirmationEmail(
   env: Env,
-  d: { name: string; email: string; plan_label: string; start: string; end: string },
+  d: { name: string; email: string; plan_label: string; start: string; end: string; terms_version?: string | null },
 ): Promise<{ emailed: boolean; error?: string }> {
   if (!smtpConfigured(env)) return { emailed: false, error: "SMTP not configured" };
+  // The customer gets a durable written copy of the EXACT terms version they
+  // accepted with their enquiry — never silently the newest text.
+  const terms = termsText(d.terms_version ?? null);
   try {
     await sendMail(cfg(env), {
       from: env.MAIL_FROM!,
@@ -113,7 +120,11 @@ export async function sendConfirmationEmail(
       text:
         `Hi ${d.name},\n\nGood news: your ${d.plan_label} is confirmed for ${d.start} to ${d.end} (inclusive).\n\n` +
         `We'll be in touch to agree exact handover times. Payment is arranged directly with Amanda, normally at handover, along with the refundable deposit.\n` +
-        `If anything changes, just reply to this email.\n\nSparkle Carpets, Isle of Man\nbookings@sparklecarpets.im`,
+        `If anything changes, just reply to this email.\n\n` +
+        `Your hire is subject to the Equipment Hire Terms & Conditions v${terms.version}, which you accepted with your enquiry. ` +
+        `A full copy follows below for your records, and the current published terms are always at https://sparklecarpets.im/terms/\n\n` +
+        `Sparkle Carpets, Isle of Man\nbookings@sparklecarpets.im\n\n` +
+        `----------------------------------------\n${terms.text}`,
     });
     return { emailed: true };
   } catch (err) {
