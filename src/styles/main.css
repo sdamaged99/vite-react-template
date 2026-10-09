@@ -136,16 +136,25 @@
     @apply text-[11px] font-bold text-ink-soft;
   }
   .cal-day {
-    @apply rounded-md py-1.5;
+    @apply grid min-h-[38px] place-items-center rounded-md border border-transparent p-0 font-body;
   }
   .cal-free {
-    @apply bg-card border border-line;
+    @apply cursor-pointer border-line bg-card hover:border-chambray;
+  }
+  .cal-nostart {
+    @apply border-line/60 bg-card text-ink-soft/60;
   }
   .cal-busy {
     @apply bg-ink-soft/80 text-linen line-through;
   }
   .cal-past {
     @apply text-ink-soft/50;
+  }
+  .cal-sel {
+    @apply border-2 border-chambray-deep bg-rec font-bold;
+  }
+  .cal-conflict {
+    @apply border-2 border-[#b3564f] bg-[#f7e9e7];
   }
 
   /* Enquiry form */
