@@ -16,11 +16,38 @@
     <header class="sticky top-0 z-40 border-b border-line bg-linen/90 backdrop-blur-md">
       <div class="shell flex items-center gap-2.5 py-3">
         <a href="/" aria-label="Sparkle Carpets home" class="flex items-center gap-2.5 font-display text-[19px] text-ink no-underline">
-          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="8" fill="var(--color-ink)" /><rect x="13" y="2" width="6" height="28" fill="var(--color-chambray)" /><rect x="9" y="6.5" width="14" height="4" rx="2" fill="var(--color-linen)" /></svg>
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true" class="shrink-0"><rect x="2" y="2" width="28" height="28" rx="8" fill="var(--color-ink)" /><rect x="13" y="2" width="6" height="28" fill="var(--color-chambray)" /><rect x="9" y="6.5" width="14" height="4" rx="2" fill="var(--color-linen)" /></svg>
           Sparkle Carpets
         </a>
-        <a class="btn ml-auto px-5 py-2.5 text-[15px]" href="/#book">Check dates &amp; enquire</a>
+        <nav aria-label="Main" class="mx-auto hidden gap-1 md:flex">
+          <a class="nav-pill" href="/#how">How it works</a>
+          <a class="nav-pill" href="/#machine">The machine</a>
+          <a class="nav-pill" href="/#prices">Prices</a>
+          <a class="nav-pill" href="/#faq">FAQs</a>
+          <a class="nav-pill" href="/terms/">Terms</a>
+          <a class="nav-pill" href="mailto:bookings@sparklecarpets.im">Contact</a>
+        </nav>
+        <a class="btn ml-auto px-4 py-2.5 text-[13.5px] sm:px-5 sm:text-[15px] md:ml-0" href="/#book">Check dates &amp; enquire</a>
+        <button
+          id="nav-toggle"
+          class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line md:hidden"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
+          aria-label="Open menu"
+        >
+          <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        </button>
       </div>
+      <nav id="mobile-nav" aria-label="Mobile" hidden class="border-t border-line md:hidden">
+        <div class="shell grid gap-1 py-3">
+          <a class="nav-pill" href="/#how">How it works</a>
+          <a class="nav-pill" href="/#machine">The machine</a>
+          <a class="nav-pill" href="/#prices">Prices</a>
+          <a class="nav-pill" href="/#faq">FAQs</a>
+          <a class="nav-pill" href="/terms/">Terms</a>
+          <a class="nav-pill" href="mailto:bookings@sparklecarpets.im">Contact</a>
+        </div>
+      </nav>
     </header>
     <main class="shell max-w-[760px] py-12">
       <h1 class="text-[clamp(28px,4vw,38px)]">Using the machine</h1>
