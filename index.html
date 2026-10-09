@@ -98,12 +98,18 @@
             <p>Equipment hire, not a cleaning service: you do the cleaning, and the savings are yours.</p>
           </div>
         </div>
-        <figure class="shot arch mx-auto aspect-[4/5] w-full max-w-[380px]" aria-label="Photograph placeholder">
-          <span class="shot-tag">Placeholder photo</span>
-          <figcaption class="shot-note">
-            Shot through a doorway: sunlit lounge, freshly cleaned pale carpet. Replaced with a licensed photograph
-            before launch.
-          </figcaption>
+        <figure class="arch mx-auto aspect-[4/5] w-full max-w-[380px] overflow-hidden">
+          <picture>
+            <source srcset="/images/hero-living-room.webp" type="image/webp" />
+            <img
+              src="/images/hero-living-room.jpg"
+              alt="Bright living room with cream sofas, a fireplace and a freshly cleaned beige carpet"
+              width="1024"
+              height="1280"
+              fetchpriority="high"
+              class="h-full w-full object-cover"
+            />
+          </picture>
         </figure>
       </section>
 
