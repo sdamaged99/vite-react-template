@@ -48,8 +48,8 @@ DNS for sparklecarpets.im is already on Cloudflare; add the custom domain to the
 ## Publishing new hire terms
 
 1. Add the new wording as `terms/versions/vN.N.txt` (never edit an old version's file).
-2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` so it contains every version's text and SHA-256, with `CURRENT_TERMS` pointing at the new one.
-3. Update the `settings` key `terms_version`. Enquiries record the version and hash they accepted, and booking confirmations always embed the accepted version's text, so existing bookings are never moved onto newer terms.
+2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` so it contains every version's text and SHA-256, with `CURRENT_TERMS` pointing at the new one. Keep the page's figures identical to the canonical text file: the page is the published copy of a hashed document, so a price change means publishing a new version, not editing this one.
+3. Nothing else: enquiries record the version and hash current at submission, and booking confirmations embed the accepted version's full text, so existing bookings are never moved onto newer terms.
 
 ## Repository documentation
 
