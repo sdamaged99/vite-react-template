@@ -8,12 +8,13 @@ Conventions: timestamps are ISO 8601 UTC text; money is integer pence; booleans 
 
 | Table | Purpose |
 | --- | --- |
-| `settings` | Key/value configuration: `turnaround_buffer_hours`, `request_hold_hours`, `deposit_pence`, `delivery_charge_pence`, `handover_times`. |
+| `settings` | Key/value configuration: `turnaround_buffer_hours`, `request_hold_hours`, `deposit_pence`, `extra_day_pence`, `cleaning_charge_pence`, `detergent_included`, `operating_base`, `handover_times`. |
+| `delivery_zones` | Configurable geographical delivery pricing from Castletown: `one_way_pence` (delivery-only or collection-only) and `both_pence`. Amanda can add, remove, reprice or deactivate zones. Remote addresses are quoted manually per booking. |
 | `equipment` | Hireable machines. One row today; the schema supports more. |
 | `rate_plans` | Configurable durations and prices per machine (24h, 48h, weekend, week). |
 | `addons` | Optional extras (cleaning solution). |
 | `customers` | Contact details captured with a booking request. |
-| `bookings` | One row per request. `buffer_until` = `end_at` + turnaround buffer and is what availability checks against. `hold_expires_at` drives auto-expiry of unanswered requests. |
+| `bookings` | One row per request. `buffer_until` = `end_at` + turnaround buffer and is what availability checks against. `hold_expires_at` drives auto-expiry of unanswered requests. `fulfilment` is one of `self`, `delivery_only`, `collection_only`, `both`; `transport_pence` (zone price, Amanda's manual `delivery_quote_pence`, or 0 when waived) is itemised separately from hire and deposit; `delivery_status` (`requested` → `confirmed`/`declined`) records Amanda's decision, and no delivery time is promised until she confirms. Rebuilt in migration 0003, pre-launch, while empty. |
 | `payments` | Handover payments and deposits: kinds `hire`, `deposit`, `deposit_refund`, `deduction`. Method `online` is reserved for a future provider. |
 | `blocked_dates` | Maintenance / personal blocks, managed by Amanda. |
 | `audit_log` | Significant admin and system events. |

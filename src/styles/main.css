@@ -15,6 +15,7 @@
   --color-chambray-deep: #4f6f8c;
   --color-mist: #dce5ec;
   --color-card: #fcfbf8;
+  --color-rec: #eef3f7;
   --color-line: #dcd7cb;
   --color-foot-line: #3b4654;
   --color-foot-text: #c7d0db;
@@ -78,10 +79,7 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   }
   .arch {
-    border-radius: 300px 300px 18px 18px;
-  }
-  .arch-soft {
-    border-radius: 160px 160px 16px 16px;
+    border-radius: 220px 220px 16px 16px;
   }
   .shot-note {
     @apply absolute inset-x-4 bottom-3.5 z-[2] text-center text-[12.5px] italic leading-normal text-linen;
@@ -104,6 +102,24 @@
   /* Café-menu price rows */
   .menu-leader {
     @apply flex-1 -translate-y-1 border-b-2 border-dotted border-line;
+  }
+
+  /* Delivery zone table */
+  .zones {
+    @apply w-full border-collapse text-[15px];
+  }
+  .zones th {
+    @apply border-b-2 border-line pb-2 text-left font-bold;
+  }
+  .zones td {
+    @apply border-b border-line py-2.5 pr-4;
+  }
+  .zones th:not(:first-child),
+  .zones td:not(:first-child) {
+    @apply pr-0 text-right font-semibold tabular-nums;
+  }
+  .zones td:first-child {
+    @apply text-ink-soft;
   }
 
   /* FAQ accordions */
