@@ -77,7 +77,7 @@ interface EnquiryBody {
   address?: string;
   extras?: unknown;
   message?: string;
-  terms_accepted?: unknown;
+  terms_acknowledged?: unknown;
   website?: string; // honeypot: must stay empty
   turnstile_token?: string;
 }
@@ -129,9 +129,11 @@ publicRoutes.post("/enquiry", async (c) => {
     return c.json({ error: "For delivery or collection by us, please include your area and address." }, 400);
   }
 
-  // Server-side acceptance check: the checkbox alone is never trusted.
-  if (body.terms_accepted !== true) {
-    return c.json({ error: "Please confirm you have read and agree to the Equipment Hire Terms & Conditions." }, 400);
+  // Server-side check: the checkbox alone is never trusted. This records an
+  // ACKNOWLEDGEMENT that the proposed terms were read — formal acceptance
+  // happens later, when Amanda agrees the arrangements with the customer.
+  if (body.terms_acknowledged !== true) {
+    return c.json({ error: "Please confirm you have read the proposed Equipment Hire Terms & Conditions." }, 400);
   }
 
   const planRow = await c.env.DB.prepare(
@@ -181,7 +183,7 @@ publicRoutes.post("/enquiry", async (c) => {
 
   const inserted = await c.env.DB.prepare(
     `INSERT INTO enquiries (name, email, phone, preferred_start, rate_plan_code, fulfilment, area, address, extras, estimate_total_pence, message,
-                             terms_version, terms_accepted_at, terms_hash)
+                             terms_version, terms_acknowledged_at, terms_hash)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?) RETURNING id`,
   )
     .bind(

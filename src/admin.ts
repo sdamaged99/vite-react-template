@@ -31,8 +31,18 @@ interface Enquiry {
   emailed: number;
   email_error: string | null;
   terms_version: string | null;
-  terms_accepted_at: string | null;
+  terms_acknowledged_at: string | null;
+  accepted_terms_version: string | null;
+  accepted_at: string | null;
+  acceptance_method: string | null;
 }
+
+const ACCEPTANCE_METHOD_LABELS: Record<string, string> = {
+  email: "email",
+  whatsapp: "WhatsApp",
+  phone: "phone",
+  in_person: "in person",
+};
 interface Activity {
   actor: string;
   action: string;
@@ -251,9 +261,17 @@ async function loadEnquiries() {
       const termsLine = document.createElement("p");
       termsLine.className = "text-[12.5px] text-ink-soft";
       termsLine.textContent = q.terms_version
-        ? `Terms v${q.terms_version} accepted ${new Date((q.terms_accepted_at ?? "") + "Z").toLocaleString("en-GB")}`
-        : "No terms record (enquiry predates terms acceptance)";
+        ? `Terms v${q.terms_version} acknowledged as read ${new Date((q.terms_acknowledged_at ?? "") + "Z").toLocaleString("en-GB")}`
+        : "No terms record (enquiry predates terms acknowledgement)";
       card.append(termsLine);
+      const acceptLine = document.createElement("p");
+      acceptLine.className = q.accepted_at ? "text-[12.5px] text-ink-soft" : "text-[12.5px] font-semibold text-[#9c4038]";
+      acceptLine.textContent = q.accepted_at
+        ? `Terms v${q.accepted_terms_version} formally accepted ${
+            ACCEPTANCE_METHOD_LABELS[q.acceptance_method ?? ""] ? `via ${ACCEPTANCE_METHOD_LABELS[q.acceptance_method ?? ""]} ` : ""
+          }${new Date(q.accepted_at + "Z").toLocaleString("en-GB")}`
+        : "Formal acceptance not yet recorded — record it once the customer agrees the arrangements and terms.";
+      card.append(acceptLine);
       if (q.message) {
         const msg = document.createElement("p");
         msg.textContent = `“${q.message}”`;
@@ -272,6 +290,13 @@ async function loadEnquiries() {
           actionBtn(
             "Confirm booking",
             async (b) => {
+              if (
+                !q.accepted_at &&
+                !window.confirm(
+                  "No formal acceptance is recorded for this enquiry yet. The customer should explicitly accept the price, dates and terms first. Confirm the booking anyway?",
+                )
+              )
+                return;
               b.disabled = true;
               b.textContent = "Confirming…";
               const res = await api<{ confirmation_emailed?: boolean }>(`/enquiries/${q.id}/confirm`, { method: "POST" });
@@ -320,6 +345,33 @@ async function loadEnquiries() {
         );
       }
       actions.append(reply);
+      // Formal acceptance is a deliberate, separate record — never implied by
+      // Confirm. Available until recorded, including on already-confirmed hires.
+      if (!q.accepted_at && q.status !== "declined" && q.status !== "closed") {
+        const sel = document.createElement("select");
+        sel.className = "field w-auto px-3 py-2 text-[13.5px]";
+        sel.setAttribute("aria-label", "How the customer accepted the terms");
+        for (const [value, label] of [
+          ["email", "by email"],
+          ["whatsapp", "by WhatsApp"],
+          ["phone", "by phone"],
+          ["in_person", "in person"],
+        ]) {
+          const opt = document.createElement("option");
+          opt.value = value;
+          opt.textContent = label;
+          sel.append(opt);
+        }
+        actions.append(
+          sel,
+          actionBtn("Record acceptance", async (b) => {
+            b.disabled = true;
+            if ((await api(`/enquiries/${q.id}/acceptance`, { method: "POST", body: JSON.stringify({ method: sel.value }) })) !== null)
+              refreshAll();
+            else b.disabled = false;
+          }),
+        );
+      }
       card.append(actions);
       return card;
     }),

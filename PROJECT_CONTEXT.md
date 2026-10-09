@@ -38,7 +38,9 @@ Sparkle Carpets is Amanda's Isle of Man side business hiring out one BISSELL Big
 
 ## Current shape (post-descope)
 
-Public site (home + terms + instructions + privacy) → enquiry form → email to bookings@ via self-hosted SMTP, stored in `enquiries` → Amanda replies by email/WhatsApp, agrees payment at handover → she records dates at `/admin/` (Cloudflare Access) in `diary` → the homepage calendar shows those dates as taken.
+Public site (home + terms + instructions + privacy) → enquiry form (customer acknowledges reading the proposed terms) → email to bookings@ via self-hosted SMTP, stored in `enquiries` → Amanda replies by email/WhatsApp, agrees price/dates/terms, records the customer's formal acceptance at `/admin/` (a deliberate action with a method: email, WhatsApp, phone, in person — never implied by Confirm) → she confirms the booking, which reserves the dates in `diary` and emails the applicable terms version in full → the homepage calendar shows those dates as taken.
+
+Terms lifecycle per enquiry: `terms_version`/`terms_acknowledged_at`/`terms_hash` record the enquiry-time acknowledgement; `accepted_terms_version`/`accepted_at`/`acceptance_method` record formal acceptance. The confirmation email embeds the accepted version's text when recorded, otherwise the acknowledged version's — never silently the newest.
 
 ## Open items before launch
 

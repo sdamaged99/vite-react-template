@@ -61,7 +61,8 @@ export function notificationText(d: EnquiryEmailData): string {
     "",
     d.message ? `Message: ${d.message}` : "",
     "",
-    `Terms:   v${d.terms_version ?? CURRENT_TERMS.version} accepted by the customer at enquiry`,
+    `Terms:   v${d.terms_version ?? CURRENT_TERMS.version} acknowledged as read at enquiry.`,
+    `         Formal acceptance is still to be agreed and recorded before confirming.`,
     "",
     "This is a PENDING enquiry. Confirm or decline it from the admin page;",
     "reply to this email to respond to the customer.",
@@ -105,11 +106,20 @@ export async function sendEnquiryEmails(env: Env, d: EnquiryEmailData): Promise<
 /** Booking-confirmed email, sent only AFTER the diary entry is saved. */
 export async function sendConfirmationEmail(
   env: Env,
-  d: { name: string; email: string; plan_label: string; start: string; end: string; terms_version?: string | null },
+  d: {
+    name: string;
+    email: string;
+    plan_label: string;
+    start: string;
+    end: string;
+    terms_version?: string | null;
+    formally_accepted?: boolean;
+  },
 ): Promise<{ emailed: boolean; error?: string }> {
   if (!smtpConfigured(env)) return { emailed: false, error: "SMTP not configured" };
-  // The customer gets a durable written copy of the EXACT terms version they
-  // accepted with their enquiry — never silently the newest text.
+  // The customer gets a durable written copy of the EXACT terms version that
+  // applies to their hire — the one they formally accepted when recorded,
+  // otherwise the one they acknowledged at enquiry — never silently the newest.
   const terms = termsText(d.terms_version ?? null);
   try {
     await sendMail(cfg(env), {
@@ -122,8 +132,9 @@ export async function sendConfirmationEmail(
         `We'll be in touch to agree exact handover times. Handover may be with Amanda or with Barry, who helps run the service. ` +
         `Payment is arranged directly with us, normally at handover, along with the refundable deposit.\n` +
         `If anything changes, just reply to this email.\n\n` +
-        `Your hire is subject to the Equipment Hire Terms & Conditions v${terms.version}, which you accepted with your enquiry. ` +
-        `A full copy follows below for your records, and the current published terms are always at https://sparklecarpets.im/terms/\n\n` +
+        `Your hire is subject to the Equipment Hire Terms & Conditions v${terms.version}${
+          d.formally_accepted ? ", which you accepted when we agreed your booking" : ""
+        }. A full copy follows below for your records, and the published terms are always at https://sparklecarpets.im/terms/\n\n` +
         `Sparkle Carpets, Isle of Man\nbookings@sparklecarpets.im\n\n` +
         `----------------------------------------\n${terms.text}`,
     });

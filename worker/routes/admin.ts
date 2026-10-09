@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { lastDay, spanDaysFor } from "../../shared/booking";
 import { requireAccess } from "../lib/access";
 import { FULFILMENT_LABELS, sendConfirmationEmail, sendEnquiryEmails, type EnquiryEmailData } from "../lib/notify";
+import { CURRENT_TERMS } from "../lib/terms";
 import type { AppBindings } from "../types";
 
 /**
@@ -60,7 +61,7 @@ adminRoutes.get("/enquiries", async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT id, created_at, name, email, phone, preferred_start, rate_plan_code,
             fulfilment, area, address, extras, estimate_total_pence, message, status, emailed, email_error,
-            terms_version, terms_accepted_at
+            terms_version, terms_acknowledged_at, accepted_terms_version, accepted_at, acceptance_method
      FROM enquiries ORDER BY created_at DESC LIMIT 100`,
   ).all();
   return c.json({ enquiries: results });
@@ -99,7 +100,11 @@ interface EnquiryRow {
   message: string | null;
   status: string;
   terms_version: string | null;
+  accepted_terms_version: string | null;
+  accepted_at: string | null;
 }
+
+const ACCEPTANCE_METHODS = ["email", "whatsapp", "phone", "in_person"] as const;
 
 async function buildEmailData(db: D1Database, q: EnquiryRow): Promise<EnquiryEmailData | null> {
   const plan = await db
@@ -164,6 +169,34 @@ adminRoutes.post("/enquiries/:id/resend", async (c) => {
 });
 
 /**
+ * Record the customer's FORMAL acceptance of the hire terms, obtained
+ * outside the website (email reply, WhatsApp, phone, in person). This is a
+ * deliberate, separate action: confirming a booking never records it.
+ * Records the CURRENT published version — that's what Amanda sends when
+ * agreeing the arrangements.
+ */
+adminRoutes.post("/enquiries/:id/acceptance", async (c) => {
+  const id = Number(c.req.param("id"));
+  const body = (await c.req.json().catch(() => ({}))) as { method?: string };
+  const method = (body.method ?? "") as (typeof ACCEPTANCE_METHODS)[number];
+  if (!Number.isInteger(id) || !ACCEPTANCE_METHODS.includes(method)) {
+    return c.json({ error: "Bad request" }, 400);
+  }
+  const q = await c.env.DB.prepare("SELECT accepted_at FROM enquiries WHERE id = ?")
+    .bind(id)
+    .first<{ accepted_at: string | null }>();
+  if (!q) return c.json({ error: "Enquiry not found" }, 404);
+  if (q.accepted_at) return c.json({ error: "Acceptance is already recorded for this enquiry." }, 409);
+  await c.env.DB.prepare(
+    "UPDATE enquiries SET accepted_terms_version = ?, accepted_at = datetime('now'), acceptance_method = ? WHERE id = ?",
+  )
+    .bind(CURRENT_TERMS.version, method, id)
+    .run();
+  await audit(c.env.DB, c.get("adminEmail"), "enquiry.terms_accepted", "enquiry", id, `v${CURRENT_TERMS.version} via ${method}`);
+  return c.json({ ok: true, version: CURRENT_TERMS.version });
+});
+
+/**
  * Confirm an enquiry: atomically writes the diary booking for the full hire
  * span (the guarded insert makes concurrent confirmations for overlapping
  * periods impossible — the second one gets a 409), marks the enquiry
@@ -201,7 +234,9 @@ adminRoutes.post("/enquiries/:id/confirm", async (c) => {
     plan_label: plan.label,
     start: q.preferred_start,
     end,
-    terms_version: q.terms_version,
+    // The formally accepted version wins; the enquiry acknowledgement is the fallback.
+    terms_version: q.accepted_terms_version ?? q.terms_version,
+    formally_accepted: q.accepted_at != null,
   });
   if (!sent.emailed) {
     await audit(c.env.DB, c.get("adminEmail"), "enquiry.confirm_email_failed", "enquiry", id, sent.error);
