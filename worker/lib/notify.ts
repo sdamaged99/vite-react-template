@@ -119,7 +119,8 @@ export async function sendConfirmationEmail(
       subject: `Your Sparkle Carpets booking is confirmed — ${d.start}`,
       text:
         `Hi ${d.name},\n\nGood news: your ${d.plan_label} is confirmed for ${d.start} to ${d.end} (inclusive).\n\n` +
-        `We'll be in touch to agree exact handover times. Payment is arranged directly with Amanda, normally at handover, along with the refundable deposit.\n` +
+        `We'll be in touch to agree exact handover times. Handover may be with Amanda or with Barry, who helps run the service. ` +
+        `Payment is arranged directly with us, normally at handover, along with the refundable deposit.\n` +
         `If anything changes, just reply to this email.\n\n` +
         `Your hire is subject to the Equipment Hire Terms & Conditions v${terms.version}, which you accepted with your enquiry. ` +
         `A full copy follows below for your records, and the current published terms are always at https://sparklecarpets.im/terms/\n\n` +
