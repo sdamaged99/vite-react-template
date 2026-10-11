@@ -45,6 +45,18 @@ DNS for sparklecarpets.im is already on Cloudflare; add the custom domain to the
 | `npm run deploy` | Build and deploy with wrangler |
 | `npm run db:migrate:local` / `:remote` | Apply D1 migrations |
 
+## Tests
+
+Run without `node_modules` (the harness stands in for Hono, D1 and the mail server; see `tests/harness/`):
+
+```sh
+node --experimental-strip-types tests/booking.test.ts            # date and money rules
+node --experimental-transform-types --import ./tests/harness/register.mjs tests/api.test.ts   # real Worker on SQLite + fake SMTP
+python3 tests/browser_test.py                                     # real pages and client code in headless Chromium
+```
+
+The browser tests run the pages unstyled (no Tailwind build offline), so they cover behaviour, not appearance. Nothing in `tests/` is part of the build.
+
 ## Publishing new hire terms
 
 1. Add the new wording as `terms/versions/vN.N.txt` (never edit an old version's file).
