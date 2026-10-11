@@ -10,7 +10,7 @@
   --color-linen: #f5f3ee;
   --color-oat: #ece7dc;
   --color-ink: #2a3340;
-  --color-ink-soft: #64707e;
+  --color-ink-soft: #5b6572; /* darkened from #64707e for AA contrast on oat and mist */
   --color-chambray: #7e9bb4;
   --color-chambray-deep: #4f6f8c;
   --color-mist: #dce5ec;
@@ -159,13 +159,14 @@
 
   /* Enquiry form */
   .field {
-    @apply grid gap-1 text-[14px] font-semibold;
+    @apply grid min-w-0 gap-1 text-[14px] font-semibold;
   }
   .field input,
   .field select,
   .field textarea {
     /* 16px minimum stops iOS Safari zooming the page on focus */
-    @apply rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[16px] font-normal text-ink;
+    /* w-full + min-w-0: a select is otherwise as wide as its longest option and pushes the page sideways */
+    @apply w-full min-w-0 rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[16px] font-normal text-ink;
   }
   .enq-ok {
     @apply rounded-xl border border-chambray-deep bg-rec px-5 py-4 text-[15px];

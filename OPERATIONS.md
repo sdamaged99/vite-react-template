@@ -22,17 +22,20 @@ All mail goes through the business's own NethServer: the Worker submits enquiry 
 - Review `audit_log` and Worker observability for anomalies when touching the app.
 - Amanda-facing issues (booking stuck, wrong price): fix data via the admin dashboard, never direct SQL in production unless the dashboard cannot, and record what changed.
 
-## Data retention (manual, at least quarterly)
+## Data retention (manual, monthly)
 
-The privacy notice promises: enquiries that don't become bookings are deleted within 12 months; confirmed-hire records are kept 6 years, then deleted. **Nothing deletes data automatically**, so run this in the D1 Console (order matters: diary rows reference enquiries):
+The privacy notice promises: enquiries that don't become bookings are deleted within 12 months; confirmed-hire records are kept 6 years, then deleted. **Nothing deletes data automatically.** On the first of each month, paste this into the D1 Console as one block:
 
 ```sql
-DELETE FROM enquiries WHERE status <> 'confirmed' AND created_at < datetime('now', '-12 months');
-DELETE FROM diary WHERE kind = 'booking' AND end_date < date('now', '-6 years');
-DELETE FROM enquiries WHERE status = 'confirmed' AND created_at < datetime('now', '-6 years') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
+DELETE FROM enquiries WHERE status <> 'confirmed' AND created_at < datetime('now', '-10 months') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
+DELETE FROM diary WHERE end_date < date('now', '-6 years');
+DELETE FROM enquiries WHERE created_at < datetime('now', '-6 years') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
+DELETE FROM audit_log WHERE created_at < datetime('now', '-6 years') OR (entity = 'enquiry' AND entity_id NOT IN (SELECT id FROM enquiries)) OR (entity = 'diary' AND entity_id NOT IN (SELECT id FROM diary));
 ```
 
-D1 Time Travel keeps point-in-time history for 30 days, so deleted rows disappear from recovery after that. The same periods apply to enquiry emails in the bookings mailbox and to WhatsApp chats: delete those by hand on the same schedule.
+Why these numbers: run monthly with a 10-month cut-off, an unsuccessful enquiry is gone from the live database by about 11 months, and from D1 Time Travel (30 days of point-in-time history) by about 12. Anything still referenced by a diary entry is treated as a hire record and kept for the 6-year period. The audit log is cleared of entries for deleted records because email error details can contain a customer's address. `tests/retention_test.py` runs exactly this block against seeded data.
+
+The same periods apply to enquiry emails in the bookings mailbox and to WhatsApp chats: delete those by hand on the same schedule.
 
 ## Troubleshooting
 

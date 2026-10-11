@@ -53,7 +53,11 @@ Run without `node_modules` (the harness stands in for Hono, D1 and the mail serv
 node --experimental-strip-types tests/booking.test.ts            # date and money rules
 node --experimental-transform-types --import ./tests/harness/register.mjs tests/api.test.ts   # real Worker on SQLite + fake SMTP
 python3 tests/browser_test.py                                     # real pages and client code in headless Chromium
+python3 tests/retention_test.py                                   # the OPERATIONS.md retention SQL against seeded data
+SITE_CSS=… FONT_DIR=… SHOT_DIR=… python3 tests/visual_test.py     # styled layout/contrast/tap-target audit + screenshots
 ```
+
+`visual_test.py` needs a Tailwind build of `src/styles/main.css` (the standalone `tailwindcss` binary from the Tailwind GitHub releases works offline) and, for production-accurate text metrics, the Fraunces and Figtree variable fonts from github.com/google/fonts.
 
 The browser tests run the pages unstyled (no Tailwind build offline), so they cover behaviour, not appearance. Nothing in `tests/` is part of the build.
 

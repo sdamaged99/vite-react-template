@@ -145,7 +145,7 @@ async function loadDiary() {
         );
       }
       const del = document.createElement("button");
-      del.className = "ml-auto text-[13px] font-bold text-[#9c4038]";
+      del.className = "ml-auto min-h-6 px-1 text-[13px] font-bold text-[#9c4038]";
       del.textContent = "Remove";
       del.addEventListener("click", async () => {
         del.disabled = true;

@@ -316,6 +316,122 @@ with sync_playwright() as p:
         assert "comes straight back" not in ins and "rental agreement" not in home
     check("Content", "Deposit refund wording identical on homepage (3 places) and instructions, matching terms 4.4", deposit_consistent)
 
+    # ------------------------------------------- availability API failure -----
+    def fill_basic(pg, name, d, plan="24h"):
+        pg.fill('input[name="name"]', name); pg.fill('input[name="phone"]', "07624 333333"); pg.fill('input[name="email"]', "f@example.com")
+        pg.select_option("#enq-plan", plan)
+        pg.fill("#enq-start", d.isoformat()); pg.dispatch_event("#enq-start", "change")
+        pg.check('input[name="terms_acknowledged"]')
+
+    def outage_page(fail_unavailable=None, fail_pricing=None, fail_enquiry=None):
+        c = browser.new_context(viewport={"width": 375, "height": 800})
+        c.route("**/fonts.*/**", lambda r: r.abort())
+        for pat, mode in [("**/api/unavailable", fail_unavailable), ("**/api/pricing", fail_pricing), ("**/api/enquiry", fail_enquiry)]:
+            if mode == "500":
+                c.route(pat, lambda r: r.fulfill(status=500, body='{"error":"Internal error"}', content_type="application/json"))
+            elif mode == "abort":
+                c.route(pat, lambda r: r.abort())
+        pg = c.new_page()
+        pg.goto(BASE + "/", wait_until="domcontentloaded")
+        pg.wait_for_timeout(800)
+        return c, pg
+
+    for mode in ("500", "abort"):
+        def outage_booked(mode=mode):
+            reset()
+            booked = first(lambda d: d.weekday() < 4, 6)
+            sql("INSERT INTO diary (start_date, end_date, kind) VALUES (?, ?, 'booking')", [booked.isoformat(), booked.isoformat()])
+            c, pg = outage_page(fail_unavailable=mode)
+            assert pg.locator("button.cal-day").count() == 0, "no calendar should render"
+            assert "if it doesn't, just send the enquiry" in " ".join(pg.text_content("#availability-cal").split())
+            assert pg.locator("#cal-legend").is_hidden()
+            fill_basic(pg, "Outage Booked", booked)
+            pg.click("#enquiry-form button[type=submit]")
+            pg.wait_for_selector("#enquiry-error:not([hidden])", timeout=10000)
+            assert "no longer available" in pg.text_content("#enquiry-error")
+            assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == 0, "booked date must not be accepted"
+            assert sql("SELECT count(*) AS n FROM diary")[0]["n"] == 1, "diary unchanged"
+            c.close()
+        check("2 API failure", f"Calendar API {mode}: fallback text shown; a booked date is still refused by the server", outage_booked)
+
+    def outage_free():
+        reset()
+        free = first(lambda d: d.weekday() < 4, 8)
+        c, pg = outage_page(fail_unavailable="500")
+        fill_basic(pg, "Outage Free", free)
+        pg.click("#enquiry-form button[type=submit]")
+        pg.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
+        r = sql("SELECT status FROM enquiries")
+        assert r == [{"status": "new"}], r
+        assert sql("SELECT count(*) AS n FROM diary")[0]["n"] == 0, "an enquiry never reserves or confirms dates"
+        c.close()
+    check("2 API failure", "Calendar API down, free date: saved only as a pending enquiry; nothing reserved or confirmed", outage_free)
+
+    def outage_weekend():
+        reset()
+        sat = first(lambda d: d.weekday() == 5, 8)
+        c, pg = outage_page(fail_unavailable="500")
+        fill_basic(pg, "Outage Weekend", sat, plan="weekend")
+        assert pg.locator("#enquiry-form button[type=submit]").is_disabled()
+        assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == 0
+        c.close()
+    check("2 API failure", "Calendar API down: weekend rule still enforced in the browser", outage_weekend)
+
+    def outage_pricing():
+        reset()
+        free = first(lambda d: d.weekday() < 4, 8)
+        c, pg = outage_page(fail_pricing="500")
+        assert pg.locator("#estimate").is_hidden(), "no estimate without live prices"
+        assert pg.text_content('[data-price-plan="24h"]') == "£30", "static published price stays"
+        fill_basic(pg, "Outage Pricing", free, plan="48h")
+        pg.select_option("#enq-fulfilment", "both"); pg.select_option("#enq-area", "Douglas, Braddan, Onchan"); pg.fill('input[name="address"]', "2 High St")
+        pg.click("#enquiry-form button[type=submit]")
+        pg.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
+        assert sql("SELECT estimate_total_pence AS t FROM enquiries")[0]["t"] == 4500 + 4000 + 7500, "server prices from D1 regardless"
+        c.close()
+    check("2 API failure", "Pricing API down: estimate hidden (no stale figures); server still prices correctly", outage_pricing)
+
+    def outage_all():
+        reset()
+        free = first(lambda d: d.weekday() < 4, 8)
+        c, pg = outage_page(fail_unavailable="abort", fail_pricing="abort", fail_enquiry="abort")
+        fill_basic(pg, "Outage All", free)
+        pg.click("#enquiry-form button[type=submit]")
+        pg.wait_for_selector("#enquiry-error:not([hidden])", timeout=10000)
+        assert "bookings@sparklecarpets.im" in pg.text_content("#enquiry-error")
+        assert pg.locator("#enquiry-result").is_hidden()
+        assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == 0
+        c.close()
+    check("2 API failure", "Whole API unreachable: clear error with the email address; no false success", outage_all)
+
+    def outage_enquiry_500():
+        reset()
+        free = first(lambda d: d.weekday() < 4, 8)
+        c, pg = outage_page(fail_enquiry="500")
+        fill_basic(pg, "Outage 500", free)
+        pg.click("#enquiry-form button[type=submit]")
+        pg.wait_for_selector("#enquiry-error:not([hidden])", timeout=10000)
+        assert pg.locator("#enquiry-result").is_hidden()
+        c.close()
+    check("2 API failure", "Enquiry endpoint error 500: error shown, never a success message", outage_enquiry_500)
+
+    def placeholder_kept():
+        page.goto(BASE + "/", wait_until="domcontentloaded")
+        fig = page.locator("#machine-photo")
+        assert fig.count() == 1 and fig.locator("img").count() == 0
+        assert "Placeholder photo" in fig.text_content()
+        assert page.locator('img[src*="/images/"]').count() == 1, "only the existing hero photo"
+    check("7 Placeholder", "Machine photo placeholder unchanged; no new imagery", placeholder_kept)
+
+    def wording():
+        page.goto(BASE + "/", wait_until="domcontentloaded")
+        t = " ".join(page.text_content("#machine").split())
+        assert "professionals use" not in t
+        assert "The BISSELL Big Green is a full-size upright carpet cleaner." in t
+        metas = page.eval_on_selector_all('meta[name="description"], meta[property="og:description"]', "ms => ms.map(m => m.content)")
+        assert metas and not any("professional" in m.lower() or "book online" in m.lower() for m in metas), metas
+    check("6 Wording", "Machine description is a plain product description; no 'professional' claims in meta text", wording)
+
     # ------------------------------------------------ admin dashboard -----
     def post_enquiry(**kw):
         body = {"name": "X", "email": "x@example.com", "phone": "07624 000000", "preferred_start": "", "rate_plan_code": "48h",

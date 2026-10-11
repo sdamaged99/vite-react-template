@@ -99,8 +99,11 @@ createServer(async (req, res) => {
     return res.end("not found");
   }
   if (file.endsWith(".css")) {
-    res.setHeader("content-type", "text/javascript"); // CSS imported as a module: no-op without Vite
-    return res.end("");
+    // CSS imported as a module. With SITE_CSS pointing at a Tailwind build of
+    // src/styles/main.css, inject it so pages render styled; otherwise no-op.
+    res.setHeader("content-type", "text/javascript");
+    const css = process.env.SITE_CSS && existsSync(process.env.SITE_CSS) ? readFileSync(process.env.SITE_CSS, "utf8") : "";
+    return res.end(css ? `const s=document.createElement("style");s.textContent=${JSON.stringify(css)};document.head.append(s);` : "");
   }
   if (file.endsWith(".ts")) {
     res.setHeader("content-type", "text/javascript");
