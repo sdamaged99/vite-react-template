@@ -64,7 +64,7 @@ The browser tests run the pages unstyled (no Tailwind build offline), so they co
 ## Publishing new hire terms
 
 1. Add the new wording as `terms/versions/vN.N.txt` (never edit an old version's file).
-2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` so it contains every version's text and SHA-256, with `CURRENT_TERMS` pointing at the new one. Keep the page's figures identical to the canonical text file: the page is the published copy of a hashed document, so a price change means publishing a new version, not editing this one.
+2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` with `node scripts/gen-terms.mjs` (add the new version to its list and point `CURRENT_TERMS` at it); the module holds every version's text and SHA-256. Keep the page's figures identical to the canonical text file: the page is the published copy of a hashed document, so a price change means publishing a new version, not editing this one.
 3. Nothing else: enquiries record the version and hash current at submission, and booking confirmations embed the accepted version's full text, so existing bookings are never moved onto newer terms.
 
 ## Repository documentation

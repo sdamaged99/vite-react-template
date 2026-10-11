@@ -193,13 +193,13 @@ await test("15 Terms", "Enquiry without the read-terms acknowledgement is reject
   }
 });
 
-await test("15 Terms", "Acknowledgement stores version 1.0, timestamp and the v1.0 hash; formal acceptance left empty", async () => {
+await test("15 Terms", "Acknowledgement stores the current version, timestamp and its hash; formal acceptance left empty", async () => {
   const r = await call("POST", "/api/enquiry", enquiry());
   assert.equal(r.status, 200);
   const q = row(lastId());
-  assert.equal(q.terms_version, "1.0");
+  assert.equal(q.terms_version, CURRENT_TERMS.version);
   assert.match(q.terms_acknowledged_at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
-  const sha = createHash("sha256").update(readFileSync("terms/versions/v1.0.txt", "utf8")).digest("hex");
+  const sha = createHash("sha256").update(readFileSync(`terms/versions/v${CURRENT_TERMS.version}.txt`, "utf8")).digest("hex");
   assert.equal(q.terms_hash, sha);
   assert.equal(q.accepted_at, null);
   assert.equal(q.accepted_terms_version, null);
@@ -207,22 +207,23 @@ await test("15 Terms", "Acknowledgement stores version 1.0, timestamp and the v1
 });
 
 await test("15 Terms", "Generated terms module matches the canonical files (hashes and text)", () => {
-  for (const [v, file] of [["1.0", "v1.0.txt"], ["0.2-draft", "v0.2.txt"]] as const) {
+  for (const [v, file] of [["1.1", "v1.1.txt"], ["1.0", "v1.0.txt"], ["0.2-draft", "v0.2.txt"]] as const) {
     const text = readFileSync(`terms/versions/${file}`, "utf8");
     assert.equal(TERMS_VERSIONS[v]!.text, text);
     assert.equal(TERMS_VERSIONS[v]!.sha256, createHash("sha256").update(text).digest("hex"));
   }
-  assert.equal(CURRENT_TERMS.version, "1.0");
+  assert.equal(CURRENT_TERMS.version, "1.1");
+  assert.equal(TERMS_VERSIONS["1.0"]!.sha256, "14a20772cc7ea5c5566a66bfd3e092b4c01a66284f95f5ee1c136b6b5ea701ce", "v1.0 must never change");
 });
 
-await test("Content", "Published terms page carries exactly the v1.0 clauses (no clause missing or altered)", () => {
+await test("Content", "Published terms page carries exactly the current version's clauses (no clause missing or altered)", () => {
   const html = readFileSync("terms/index.html", "utf8");
   const pageText = html
     .replace(/<\/?(a|strong|span)\b[^>]*>/g, "")
     .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ");
-  const canon = readFileSync("terms/versions/v1.0.txt", "utf8");
+  const canon = readFileSync(`terms/versions/v${CURRENT_TERMS.version}.txt`, "utf8");
   const clauses = canon.match(/^\d+\.\d+\. .+$/gm)!;
   assert.equal(clauses.length, 79);
   for (const c of clauses) assert.ok(pageText.includes(c.replace(/\s+/g, " ").replace(/:$/, ":")), `missing on page: ${c.slice(0, 60)}`);
@@ -422,11 +423,23 @@ await test("15 Terms", "Confirming does NOT record formal acceptance; confirmati
   assert.equal(q.accepted_at, null);
   assert.equal(q.acceptance_method, null);
   const mail = smtpState.sessions[0]!.messages[0]!.data;
-  assert.ok(mail.includes("Equipment Hire Terms & Conditions v1.0."), "names the version");
+  assert.ok(mail.includes(`Equipment Hire Terms & Conditions v${CURRENT_TERMS.version}.`), "names the version");
   assert.ok(!mail.includes("which you accepted"));
   assert.ok(mail.includes("Handover may be with Amanda or with Barry"));
-  const canon = readFileSync("terms/versions/v1.0.txt", "utf8").replace(/\r?\n/g, "\r\n").replace(/(^|\r\n)\./g, "$1..");
-  assert.ok(mail.includes(canon.trimEnd()), "durable full copy of v1.0 embedded verbatim");
+  const canon = readFileSync(`terms/versions/v${CURRENT_TERMS.version}.txt`, "utf8").replace(/\r?\n/g, "\r\n").replace(/(^|\r\n)\./g, "$1..");
+  assert.ok(mail.includes(canon.trimEnd()), "durable full copy of the acknowledged version embedded verbatim");
+});
+
+await test("15 Terms", "Enquiry acknowledged under v1.0 is confirmed with the v1.0 text, never silently the newer version", async () => {
+  await call("POST", "/api/enquiry", enquiry({ preferred_start: daysFromNow(105), name: "Old Terms" }));
+  const id = lastId();
+  DB.raw.prepare("UPDATE enquiries SET terms_version = '1.0' WHERE id = ?").run(id);
+  smtpState.sessions.length = 0;
+  assert.equal((await admin("POST", `/enquiries/${id}/confirm`)).status, 200);
+  const mail = smtpState.sessions[0]!.messages[0]!.data;
+  assert.ok(mail.includes("Equipment Hire Terms & Conditions v1.0."));
+  assert.ok(mail.includes("12.3. Optional accessories, including upholstery attachments where available"));
+  assert.ok(!mail.includes("Version 1.1"));
 });
 
 await test("15 Terms", "Recording acceptance stores version, time and method, audited; repeat and bad method refused", async () => {
@@ -436,14 +449,14 @@ await test("15 Terms", "Recording acceptance stores version, time and method, au
   const a = await admin("POST", `/enquiries/${id}/acceptance`, { method: "whatsapp" });
   assert.equal(a.status, 200);
   const q = row(id);
-  assert.equal(q.accepted_terms_version, "1.0");
+  assert.equal(q.accepted_terms_version, CURRENT_TERMS.version);
   assert.equal(q.acceptance_method, "whatsapp");
   assert.match(q.accepted_at, /^\d{4}-\d{2}-\d{2} /);
-  assert.equal(q.terms_version, "1.0", "acknowledgement kept separately");
+  assert.equal(q.terms_version, CURRENT_TERMS.version, "acknowledgement kept separately");
   assert.equal((await admin("POST", `/enquiries/${id}/acceptance`, { method: "email" })).status, 409);
   assert.equal(row(id).acceptance_method, "whatsapp", "not overwritten");
   const act = await admin("GET", "/activity");
-  assert.ok(act.body.activity.some((x: any) => x.action === "enquiry.terms_accepted" && x.entity_id === id && x.detail === "v1.0 via whatsapp"));
+  assert.ok(act.body.activity.some((x: any) => x.action === "enquiry.terms_accepted" && x.entity_id === id && x.detail === `v${CURRENT_TERMS.version} via whatsapp`));
   smtpState.sessions.length = 0;
   assert.equal((await admin("POST", `/enquiries/${id}/confirm`)).status, 200);
   assert.ok(smtpState.sessions[0]!.messages[0]!.data.includes("which you accepted when we agreed your booking"));

@@ -233,7 +233,7 @@ with sync_playwright() as p:
         page.click("#enquiry-form button[type=submit]")
         page.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
         rows = sql("SELECT name, email, rate_plan_code, terms_version, emailed, estimate_total_pence FROM enquiries")
-        assert len(rows) == 1 and rows[0]["name"] == "Pat Example" and rows[0]["terms_version"] == "1.0" and rows[0]["emailed"] == 1, rows
+        assert len(rows) == 1 and rows[0]["name"] == "Pat Example" and rows[0]["terms_version"] == "1.1" and rows[0]["emailed"] == 1, rows
         assert rows[0]["estimate_total_pence"] == 3000 + 7500
         msgs = json.loads(urllib.request.urlopen(f"{BASE}/__test/smtp").read())
         assert len(msgs) == 2, msgs
@@ -432,6 +432,32 @@ with sync_playwright() as p:
         assert metas and not any("professional" in m.lower() or "book online" in m.lower() for m in metas), metas
     check("6 Wording", "Machine description is a plain product description; no 'professional' claims in meta text", wording)
 
+    def attachment_consistent():
+        bad_phrases = ["optional accessor", "upholstery tool", "subject to availability)", "upholstery_tool"]
+        for path in ["/", "/terms/", "/instructions/", "/privacy/"]:
+            page.goto(BASE + path, wait_until="domcontentloaded")
+            t = " ".join(page.text_content("body").split()).lower()
+            for b in bad_phrases:
+                assert b not in t, f"{b!r} on {path}"
+            if path != "/privacy/":
+                assert "stair and upholstery" in t or "stair & upholstery" in t, f"attachment not mentioned on {path}"
+        page.goto(BASE + "/terms/", wait_until="domcontentloaded")
+        assert "12.3. The stair and upholstery cleaning attachment is included with every hire at no additional charge. All supplied accessories must be returned with the machine." in " ".join(page.text_content("body").split())
+        page.goto(BASE + "/", wait_until="domcontentloaded")
+        page.wait_for_selector("#enq-plan option", state="attached")
+        assert page.locator('input[name="extras"][value="upholstery_tool"]').count() == 0
+    check("Attachment", "Attachment described as included on home, pricing, FAQ, terms 12.3 and instructions; never a paid option", attachment_consistent)
+
+    def privacy_content():
+        page.goto(BASE + "/privacy/", wait_until="domcontentloaded")
+        t = " ".join(page.text_content("main").split())
+        for must in ["name, email address and telephone number", "delivery area and address", "Cloudflare", "own mail server",
+                     "don't sell", "unsolicited marketing", "as long as reasonably necessary", "bookings@sparklecarpets.im", "Version 1.1"]:
+            assert must in t, must
+        for banned in ["12 months", "6 years", "six years", "deleted within", "we do not store", "immediately delete"]:
+            assert banned not in t, banned
+    check("Privacy", "Privacy notice covers what/why/where/no-sale/retention/contact with no fixed retention promises", privacy_content)
+
     # ------------------------------------------------ admin dashboard -----
     def post_enquiry(**kw):
         body = {"name": "X", "email": "x@example.com", "phone": "07624 000000", "preferred_start": "", "rate_plan_code": "48h",
@@ -466,7 +492,7 @@ with sync_playwright() as p:
     def admin_lines():
         assert not aerr, aerr
         t = " ".join(card("Alice A").text_content().split())
-        assert "Terms v1.0 acknowledged as read" in t, t
+        assert "Terms v1.1 acknowledged as read" in t, t
         assert "Formal acceptance not yet recorded" in t, t
         assert "est. due £127.50 incl. deposit" in t, t
     check("16 Admin", "Admin card shows acknowledgement, missing acceptance and exact 50p totals", admin_lines)
@@ -490,7 +516,7 @@ with sync_playwright() as p:
         c.get_by_role("button", name="Record acceptance").click()
         ap.wait_for_function("() => [...document.querySelectorAll('#enquiry-list > *')].some(e => e.textContent.includes('Bob B') && e.textContent.includes('formally accepted via WhatsApp'))", timeout=10000)
         r = sql("SELECT accepted_terms_version, acceptance_method FROM enquiries WHERE name='Bob B'")[0]
-        assert r == {"accepted_terms_version": "1.0", "acceptance_method": "whatsapp"}, r
+        assert r == {"accepted_terms_version": "1.1", "acceptance_method": "whatsapp"}, r
         assert card("Bob B").get_by_role("button", name="Record acceptance").count() == 0
         n_before = len(dialogs)
         ap.once("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))

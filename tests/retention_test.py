@@ -12,7 +12,7 @@ for f in sorted(glob.glob("db/migrations/0*.sql")):
     db.executescript(open(f).read())
 
 ops = open("OPERATIONS.md").read()
-block = re.search(r"## Data retention.*?```sql\n(.*?)```", ops, re.S).group(1)
+block = re.search(r"## Data housekeeping.*?```sql\n(.*?)```", ops, re.S).group(1)
 
 
 def enq(name, status, created):
