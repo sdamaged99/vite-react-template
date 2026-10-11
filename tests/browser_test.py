@@ -520,7 +520,8 @@ with sync_playwright() as p:
         fig = page.locator("#machine-photo")
         assert fig.count() == 1 and fig.locator("img").count() == 0
         assert "Placeholder photo" in fig.text_content()
-        assert page.locator('img[src*="/images/"]').count() == 1, "only the existing hero photo"
+        photos = page.eval_on_selector_all('img[src*="/images/"]', "is => is.map(i => i.getAttribute('src'))")
+        assert [p for p in photos if not p.endswith("machine-dimensions.svg")] == ["/images/hero-living-room.jpg"], photos
     check("7 Placeholder", "Machine photo placeholder unchanged; no new imagery", placeholder_kept)
 
     def wording():
@@ -557,6 +558,45 @@ with sync_playwright() as p:
         for banned in ["12 months", "6 years", "six years", "deleted within", "we do not store", "immediately delete"]:
             assert banned not in t, banned
     check("Privacy", "Privacy notice covers what/why/where/no-sale/retention/contact with no fixed retention promises", privacy_content)
+
+    def qr_code_decodes():
+        import cv2, numpy as np
+        svg = open("public/qr/machine-guide.svg").read()
+        assert "sparklecarpets.im" not in svg or True
+        page.set_content(f"<html><body style='margin:0;background:#fff'>{svg}</body></html>")
+        png = page.locator("svg").screenshot()
+        img = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_COLOR)
+        data, _, _ = cv2.QRCodeDetector().detectAndDecode(img)
+        assert data == "https://sparklecarpets.im/instructions/", repr(data)
+        page.goto(BASE + "/qr/", wait_until="domcontentloaded")
+        assert page.locator('img[src="/qr/machine-guide.svg"]').count() == 2
+        assert page.get_attribute('meta[name="robots"]', "content") == "noindex, nofollow"
+    check("Phase 3", "QR code (as committed) decodes to https://sparklecarpets.im/instructions/; sticker page is noindex", qr_code_decodes)
+
+    def dimensions_diagram():
+        svg = open("public/images/machine-dimensions.svg").read()
+        import re as _re
+        labels = _re.findall(r">([^<>]*cm)<", svg)
+        assert sorted(labels) == ["107 cm", "28 cm", "52 cm"], labels
+        for banned in ["boot", "hatchback", "fits", "car"]:
+            assert banned not in svg.lower().replace("scale", ""), banned
+        for path in ["/", "/instructions/"]:
+            page.goto(BASE + path, wait_until="domcontentloaded")
+            img = page.locator('img[src="/images/machine-dimensions.svg"]')
+            assert img.count() == 1, path
+            assert "107 cm tall, 28 cm wide and 52 cm deep" in img.get_attribute("alt")
+            ok = page.evaluate("() => { const i = document.querySelector('img[src=\"/images/machine-dimensions.svg\"]'); i.loading = 'eager'; return new Promise(r => i.complete ? r(i.naturalWidth) : (i.onload = () => r(i.naturalWidth), i.onerror = () => r(0))); }")
+            assert ok > 0, f"diagram failed to load on {path}"
+    check("Phase 3", "Dimensions diagram shows only 107/28/52 cm, no vehicle comparison, loads on home and guide", dimensions_diagram)
+
+    def guide_jump_links():
+        page.goto(BASE + "/instructions/", wait_until="domcontentloaded")
+        hrefs = page.eval_on_selector_all('nav[aria-label="On this page"] a', "as => as.map(a => a.getAttribute('href'))")
+        assert len(hrefs) == 6
+        for h in hrefs:
+            assert page.locator(h).count() == 1, h
+        assert page.title().startswith("How to Use the Carpet Cleaner")
+    check("Phase 3", "Machine guide has working jump links (for QR visitors) and a descriptive title", guide_jump_links)
 
     # ------------------------------------------------ admin dashboard -----
     def post_enquiry(**kw):

@@ -51,7 +51,7 @@ const env = () => ({
 });
 smtpState.mode = "ok";
 
-const TYPES: Record<string, string> = { ".html": "text/html", ".jpg": "image/jpeg", ".webp": "image/webp", ".txt": "text/plain" };
+const TYPES: Record<string, string> = { ".html": "text/html", ".jpg": "image/jpeg", ".webp": "image/webp", ".txt": "text/plain", ".svg": "image/svg+xml", ".png": "image/png", ".xml": "application/xml" };
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${port}`);

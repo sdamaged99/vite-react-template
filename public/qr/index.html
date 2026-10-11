@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Machine guide QR sticker | Sparkle Carpets</title>
+    <style>
+      /* Print-ready sticker sheet: two sizes. The code points at the permanent
+         domain, so print only once sparklecarpets.im is live, and test-scan it. */
+      body { margin: 0; padding: 12mm; font-family: system-ui, sans-serif; color: #2a3340; background: #fff; }
+      .row { display: flex; gap: 12mm; flex-wrap: wrap; align-items: flex-start; }
+      .sticker { border: 0.3mm dashed #b8b2a6; border-radius: 3mm; padding: 4mm; text-align: center; }
+      .sticker img { display: block; margin: 0 auto 2mm; }
+      .big img { width: 45mm; height: 45mm; }
+      .small img { width: 28mm; height: 28mm; }
+      .sticker strong { display: block; font-size: 11pt; }
+      .sticker span { font-size: 8.5pt; }
+      .small strong { font-size: 9pt; }
+      .small span { font-size: 7pt; }
+      @media print { .hint { display: none; } }
+    </style>
+  </head>
+  <body>
+    <p class="hint">Print at 100% scale (no "fit to page"), cut along the dashed lines, and test-scan before sticking it on the machine.</p>
+    <div class="row">
+      <div class="sticker big">
+        <img src="/qr/machine-guide.svg" alt="QR code linking to the Sparkle Carpets machine guide" />
+        <strong>Scan for the machine guide</strong>
+        <span>sparklecarpets.im/instructions</span>
+      </div>
+      <div class="sticker small">
+        <img src="/qr/machine-guide.svg" alt="QR code linking to the Sparkle Carpets machine guide" />
+        <strong>Machine guide</strong>
+        <span>sparklecarpets.im/instructions</span>
+      </div>
+    </div>
+  </body>
+</html>

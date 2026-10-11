@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 290" role="img" aria-labelledby="t d" font-family="Figtree, system-ui, sans-serif">
+  <title id="t">Machine dimensions</title>
+  <desc id="d">Outline drawn to scale: 107 cm tall, 28 cm wide and 52 cm deep. Manufacturer's published dimensions for the BISSELL Big Green, UK model 48F3E. Outline only, not the machine's exact shape.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L8 4L0 8z" fill="#2a3340"/>
+    </marker>
+  </defs>
+  <!-- 1 cm = 2 units. Front: 28 x 107 cm. Side: 52 x 107 cm. -->
+  <text x="98" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2a3340">Front</text>
+  <rect x="70" y="26" width="56" height="214" rx="8" fill="#dce5ec" stroke="#2a3340" stroke-width="2"/>
+  <text x="246" y="16" text-anchor="middle" font-size="13" font-weight="700" fill="#2a3340">Side</text>
+  <rect x="194" y="26" width="104" height="214" rx="8" fill="#dce5ec" stroke="#2a3340" stroke-width="2"/>
+
+  <!-- height -->
+  <line x1="44" y1="28" x2="44" y2="238" stroke="#2a3340" stroke-width="1.5" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="36" y="137" text-anchor="middle" font-size="14" font-weight="700" fill="#2a3340" transform="rotate(-90 36 137)">107 cm</text>
+  <!-- width -->
+  <line x1="72" y1="258" x2="124" y2="258" stroke="#2a3340" stroke-width="1.5" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="98" y="280" text-anchor="middle" font-size="14" font-weight="700" fill="#2a3340">28 cm</text>
+  <!-- depth -->
+  <line x1="196" y1="258" x2="296" y2="258" stroke="#2a3340" stroke-width="1.5" marker-start="url(#a)" marker-end="url(#a)"/>
+  <text x="246" y="280" text-anchor="middle" font-size="14" font-weight="700" fill="#2a3340">52 cm</text>
+</svg>

@@ -671,6 +671,22 @@ await test("16 Admin", "Admin enquiry list exposes acknowledgement and acceptanc
   for (const k of ["terms_version", "terms_acknowledged_at", "accepted_terms_version", "accepted_at", "acceptance_method"]) assert.ok(k in e, k);
 });
 
+await test("Phase 3", "Structured data parses, matches the D1 prices, names the service area and invents no address or phone", () => {
+  const html = readFileSync("index.html", "utf8");
+  const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]!;
+  const ld = JSON.parse(json);
+  assert.equal(ld["@type"], "LocalBusiness");
+  const prices = Object.fromEntries(
+    (DB.raw.prepare("SELECT label, price_pence FROM rate_plans WHERE active = 1").all() as any[]).map((r) => [r.price_pence / 100, r.label]),
+  );
+  const offered = ld.makesOffer.map((o: any) => Number(o.price)).sort((a: number, b: number) => a - b);
+  assert.deepEqual(offered, Object.keys(prices).map(Number).sort((a, b) => a - b), "offers must equal the active D1 packages");
+  assert.ok(ld.areaServed.some((a: any) => a.name === "Isle of Man"));
+  assert.equal(ld.address.streetAddress, undefined, "no street address published");
+  assert.equal(ld.telephone, undefined, "no unverified phone number");
+  assert.equal(ld.address.addressCountry, "IM");
+});
+
 /* ------------------------------------------------------------- report ---- */
 let fail = 0;
 for (const r of results) {

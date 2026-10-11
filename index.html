@@ -26,15 +26,41 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
     />
+    <!-- Structured data for search engines. Prices mirror the published packages
+         (terms v1.1, clause 3.2) and the D1 rate_plans; tests/api.test.ts fails if
+         they drift apart. No street address: collection is by arrangement. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "LocalBusiness",
+        "@id": "https://sparklecarpets.im/#business",
         "name": "Sparkle Carpets",
-        "description": "Carpet cleaning machine hire on the Isle of Man.",
+        "description": "Carpet cleaner hire on the Isle of Man: hire a BISSELL Big Green carpet cleaning machine and clean your carpets yourself. Collect in Castletown or have it delivered.",
         "url": "https://sparklecarpets.im/",
         "email": "bookings@sparklecarpets.im",
-        "areaServed": { "@type": "Place", "name": "Isle of Man" }
+        "priceRange": "£30–£95",
+        "currenciesAccepted": "GBP",
+        "paymentAccepted": "Cash, Bank transfer",
+        "address": { "@type": "PostalAddress", "addressLocality": "Castletown", "addressRegion": "Isle of Man", "addressCountry": "IM" },
+        "areaServed": [
+          { "@type": "AdministrativeArea", "name": "Isle of Man" },
+          { "@type": "Place", "name": "Castletown" },
+          { "@type": "Place", "name": "Douglas" },
+          { "@type": "Place", "name": "Ramsey" },
+          { "@type": "Place", "name": "Peel" },
+          { "@type": "Place", "name": "Port Erin" },
+          { "@type": "Place", "name": "Port St Mary" },
+          { "@type": "Place", "name": "Ballasalla" },
+          { "@type": "Place", "name": "Onchan" },
+          { "@type": "Place", "name": "Laxey" }
+        ],
+        "makesOffer": [
+          { "@type": "Offer", "name": "24-hour carpet cleaner hire", "price": "30", "priceCurrency": "GBP" },
+          { "@type": "Offer", "name": "48-hour carpet cleaner hire", "price": "45", "priceCurrency": "GBP" },
+          { "@type": "Offer", "name": "Weekend carpet cleaner hire (Friday to Monday)", "price": "55", "priceCurrency": "GBP" },
+          { "@type": "Offer", "name": "3-day carpet cleaner hire", "price": "60", "priceCurrency": "GBP" },
+          { "@type": "Offer", "name": "7-day carpet cleaner hire", "price": "95", "priceCurrency": "GBP" }
+        ]
       }
     </script>
     <script type="module" src="/src/main.ts"></script>
@@ -193,6 +219,11 @@
                 <div class="min-w-0"><dt class="text-[12px] font-semibold text-ink-soft">Hose</dt><dd class="m-0 text-[15px] font-semibold leading-snug">2.7 m</dd></div>
                 <div class="min-w-0"><dt class="text-[12px] font-semibold text-ink-soft">Power</dt><dd class="m-0 text-[15px] font-semibold leading-snug">1400 W</dd></div>
               </dl>
+              <figure class="mt-4 grid justify-items-start gap-1.5">
+                <img src="/images/machine-dimensions.svg" width="340" height="290" loading="lazy" class="h-auto w-full max-w-[300px]"
+                  alt="Outline drawn to scale: the machine is 107 cm tall, 28 cm wide and 52 cm deep." />
+                <figcaption class="text-[12px] text-ink-soft">Drawn to scale from the published dimensions; outline only, not the machine's exact shape.</figcaption>
+              </figure>
               <p class="mt-3 text-[14px] leading-snug">Collecting the machine? Please check its dimensions before travelling, and contact us if you're unsure whether it will fit in your vehicle.</p>
               <p class="mt-2 text-[11px] leading-snug text-ink-soft/80">Manufacturer's published figures for the BISSELL Big Green (UK model 48F3E).</p>
             </div>
@@ -268,7 +299,7 @@
 
           <div class="mt-10 grid gap-5 md:grid-cols-[0.9fr_1.1fr] md:gap-12">
             <div class="grid content-start gap-3">
-              <h3 class="text-[19px] font-semibold">Delivery and collection</h3>
+              <h3 class="text-[19px] font-semibold">Delivery and collection across the Isle of Man</h3>
               <p class="max-w-[48ch] text-[15px] text-ink-soft">
                 We operate from Castletown. Collecting and returning the machine yourself is free, or choose any mix
                 of journeys:
