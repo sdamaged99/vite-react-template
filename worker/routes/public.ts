@@ -32,6 +32,7 @@ const PUBLIC_SETTINGS = [
   "detergent_included",
   "operating_base",
   "whatsapp_number",
+  "whatsapp_followup",
 ] as const;
 
 publicRoutes.get("/pricing", async (c) => {
@@ -236,5 +237,5 @@ publicRoutes.post("/enquiry", async (c) => {
 
   // Honest partial success: the enquiry is saved either way; the flag lets the
   // page tell the customer when our notification email failed.
-  return c.json({ ok: true, emailed: sent.emailed });
+  return c.json({ ok: true, emailed: sent.emailed, id: inserted.id });
 });

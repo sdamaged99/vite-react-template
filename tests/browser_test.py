@@ -598,6 +598,71 @@ with sync_playwright() as p:
         assert page.title().startswith("How to Use the Carpet Cleaner")
     check("Phase 3", "Machine guide has working jump links (for QR visitors) and a descriptive title", guide_jump_links)
 
+    def whatsapp_followup():
+        # Off by default: no follow-up button after a successful enquiry
+        reset(); load()
+        d = first(lambda d: d.weekday() < 4 and not (busy_start <= d <= busy_end), 8)
+        fill_all(page, "Wanda Example", d, plan="48h", fulfil="both", area="Douglas, Braddan, Onchan", address="5 Secret Lane", email="wanda@example.com")
+        submit(page)
+        page.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
+        assert page.locator("[data-followup]").count() == 0, "must stay off until enabled"
+        # Number set but switch off: still nothing
+        sql("UPDATE settings SET value = '447624000000' WHERE key = 'whatsapp_number'")
+        reset_keep = None
+        load()
+        fill_all(page, "Wanda Example", d, plan="48h", fulfil="both", area="Douglas, Braddan, Onchan", address="5 Secret Lane", email="wanda@example.com")
+        submit(page)
+        page.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
+        assert page.locator("[data-followup]").count() == 0
+        # Both on: pre-filled message with package, dates, transport and estimate only
+        sql("UPDATE settings SET value = '1' WHERE key = 'whatsapp_followup'")
+        load()
+        fill_all(page, "Wanda Example", d, plan="48h", fulfil="both", area="Douglas, Braddan, Onchan", address="5 Secret Lane", email="wanda@example.com")
+        submit(page)
+        page.wait_for_selector("[data-followup]", timeout=10000)
+        href = page.get_attribute("[data-followup]", "href")
+        import urllib.parse as up
+        assert href.startswith("https://wa.me/447624000000?text=")
+        text = up.unquote(href.split("text=", 1)[1])
+        last_id = sql("SELECT max(id) AS m FROM enquiries")[0]["m"]
+        for must in [f"#{last_id}", "48-hour hire", "Transport: delivery and collection (Douglas, Braddan, Onchan)", "Estimate due at handover: £160", "Dates: "]:
+            assert must in text, (must, text)
+        for private in ["Wanda", "wanda@example.com", "07624 333333", "Secret Lane"]:
+            assert private not in text, private
+    check("Phase 4", "WhatsApp follow-up: off by default and with only a number; when enabled, pre-filled without private details", whatsapp_followup)
+
+    def gallery_and_reviews():
+        reset(); load()
+        assert page.locator("#gallery").is_hidden() and page.locator("#reviews").is_hidden(), "hidden with empty manifests"
+        c = browser.new_context(viewport={"width": 375, "height": 800})
+        c.route("**/fonts.*/**", lambda r: r.abort())
+        gallery = {"photos": [
+            {"src": "/gallery/machine-front.jpg", "alt": "Our Big Green in the hallway", "genuine": True},
+            {"src": "/gallery/stock.jpg", "alt": "A stock photo", "genuine": False},
+            {"kind": "before-after", "before": "/gallery/b.jpg", "after": "/gallery/a.jpg", "alt": "Lounge carpet", "genuine": True},
+            {"kind": "before-after", "before": "/gallery/b2.jpg", "after": "/gallery/a2.jpg", "alt": "Stairs", "genuine": True, "consent": True},
+            {"src": "https://example.com/hotlinked.jpg", "alt": "Off-site image", "genuine": True},
+        ]}
+        reviews = {"testimonials": [
+            {"quote": "Easy to use and spotless carpets.", "name": "Jo", "area": "Peel", "permission": "written (email 12 Nov 2026)"},
+            {"quote": "Made-up praise", "name": "Anon"},
+        ]}
+        c.route("**/gallery/gallery.json", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(gallery)))
+        c.route("**/reviews/testimonials.json", lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(reviews)))
+        c.route("**/gallery/*.jpg", lambda r: r.fulfill(status=200, content_type="image/svg+xml", body="<svg xmlns='http://www.w3.org/2000/svg' width='4' height='3'/>"))
+        pg = c.new_page()
+        pg.goto(BASE + "/", wait_until="domcontentloaded")
+        pg.wait_for_selector("#gallery:not([hidden])", timeout=10000)
+        srcs = pg.eval_on_selector_all("#gallery img", "is => is.map(i => i.getAttribute('src'))")
+        assert srcs == ["/gallery/machine-front.jpg", "/gallery/b2.jpg", "/gallery/a2.jpg"], srcs
+        alts = pg.eval_on_selector_all("#gallery img", "is => is.map(i => i.alt)")
+        assert alts[1].startswith("Before:") and alts[2].startswith("After:"), alts
+        pg.wait_for_selector("#reviews:not([hidden])", timeout=10000)
+        quotes = [" ".join(x.split()) for x in pg.eval_on_selector_all("#reviews blockquote", "bs => bs.map(b => b.textContent)")]
+        assert quotes == ["“Easy to use and spotless carpets.”Jo, Peel"], quotes
+        c.close()
+    check("Phase 4", "Gallery and testimonials stay hidden until genuine, permitted entries exist; others are filtered out", gallery_and_reviews)
+
     # ------------------------------------------------ admin dashboard -----
     def post_enquiry(**kw):
         body = {"name": "X", "email": "x@example.com", "phone": "07624 000000", "preferred_start": "", "rate_plan_code": "48h",

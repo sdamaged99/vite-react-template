@@ -400,6 +400,143 @@ async function hydrate() {
   }
 }
 
+/* ------------------------------------------- WhatsApp follow-up (prepared) */
+/**
+ * PREPARED, OFF by default. After a successful enquiry, offer a WhatsApp
+ * message pre-filled with the enquiry number, package, dates, delivery
+ * choice/area and estimate (never name, phone, email or address). Shown only
+ * when settings.whatsapp_number is set (a verified number) AND
+ * settings.whatsapp_followup = '1'. Nothing is sent automatically: the
+ * customer's own WhatsApp opens with the text ready to edit or send.
+ */
+function whatsappFollowUp(enquiryId: number | undefined): HTMLElement | null {
+  const number = (pricing?.settings["whatsapp_number"] ?? "").replace(/\D/g, "");
+  if (!number || pricing?.settings["whatsapp_followup"] !== "1" || !planSelect) return null;
+  const plan = pricing?.rates.find((r) => r.code === planSelect.value)?.label ?? planSelect.value;
+  const f = (fulfilSelect?.value ?? "self") as Fulfilment;
+  const fulfilText =
+    f === "self" ? "I'll collect and return it" : f === "deliver_only" ? "delivery only" : f === "collect_only" ? "collection only" : "delivery and collection";
+  const otherInput = document.getElementById("enq-other") as HTMLInputElement | null;
+  const area = f === "self" ? "" : areaSelect?.value === "__other" ? (otherInput?.value ?? "").trim() : (areaSelect?.value ?? "");
+  const dates = document.getElementById("est-dates")?.textContent?.trim() ?? "";
+  const due = document.getElementById("est-due")?.textContent?.trim() ?? "";
+  const lines = [
+    `Hi Sparkle Carpets, I've just sent an enquiry${enquiryId ? ` (#${enquiryId})` : ""}.`,
+    `Package: ${plan}`,
+    dates ? `Dates: ${dates}` : "",
+    `Transport: ${fulfilText}${area ? ` (${area})` : ""}`,
+    due ? `Estimate due at handover: ${due}` : "",
+  ].filter(Boolean);
+  const a = document.createElement("a");
+  a.className = "btn mt-3";
+  a.href = `https://wa.me/${number}?text=${encodeURIComponent(lines.join("\n"))}`;
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.textContent = "Questions? Message us on WhatsApp";
+  a.dataset.followup = "";
+  return a;
+}
+
+/* ------------------------------------ gallery and testimonials (prepared) */
+interface GalleryPhoto {
+  src?: string;
+  before?: string;
+  after?: string;
+  alt?: string;
+  caption?: string;
+  kind?: "product" | "before-after";
+  genuine?: boolean;
+  consent?: boolean;
+}
+interface Testimonial {
+  quote?: string;
+  name?: string;
+  area?: string;
+  date?: string;
+  permission?: string;
+}
+const localPath = (p: unknown) => typeof p === "string" && /^\/gallery\/[\w.-]+\.(jpe?g|png|webp)$/i.test(p);
+
+/** Only genuine photos are shown; before/after pairs also need the homeowner's consent. */
+export function usablePhoto(p: GalleryPhoto): boolean {
+  if (p.genuine !== true || !p.alt?.trim()) return false;
+  if (p.kind === "before-after") return p.consent === true && localPath(p.before) && localPath(p.after);
+  return localPath(p.src);
+}
+/** Only real words with recorded written permission. */
+export function usableTestimonial(t: Testimonial): boolean {
+  return !!t.quote?.trim() && !!t.name?.trim() && typeof t.permission === "string" && t.permission.startsWith("written");
+}
+
+async function loadGallery() {
+  const section = document.getElementById("gallery");
+  const grid = document.getElementById("gallery-grid");
+  if (!section || !grid) return;
+  try {
+    const res = await fetch("/gallery/gallery.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    const photos = (((await res.json()) as { photos?: GalleryPhoto[] }).photos ?? []).filter(usablePhoto);
+    if (photos.length === 0) return;
+    grid.replaceChildren(
+      ...photos.map((p) => {
+        const fig = document.createElement("figure");
+        fig.className = "grid gap-2";
+        const imgs = p.kind === "before-after" ? [[p.before!, "Before"], [p.after!, "After"]] : [[p.src!, ""]];
+        const row = document.createElement("div");
+        row.className = imgs.length > 1 ? "grid grid-cols-2 gap-2" : "";
+        for (const [src, label] of imgs) {
+          const img = document.createElement("img");
+          img.src = src!;
+          img.alt = label ? `${label}: ${p.alt}` : p.alt!;
+          img.loading = "lazy";
+          img.className = "aspect-[4/3] w-full rounded-xl object-cover";
+          row.append(img);
+        }
+        fig.append(row);
+        if (p.caption) {
+          const cap = document.createElement("figcaption");
+          cap.className = "text-[13.5px] text-ink-soft";
+          cap.textContent = p.caption;
+          fig.append(cap);
+        }
+        return fig;
+      }),
+    );
+    section.hidden = false;
+  } catch {
+    /* stays hidden */
+  }
+}
+
+async function loadTestimonials() {
+  const section = document.getElementById("reviews");
+  const grid = document.getElementById("reviews-grid");
+  if (!section || !grid) return;
+  try {
+    const res = await fetch("/reviews/testimonials.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    const items = (((await res.json()) as { testimonials?: Testimonial[] }).testimonials ?? []).filter(usableTestimonial);
+    if (items.length === 0) return;
+    grid.replaceChildren(
+      ...items.map((t) => {
+        const q = document.createElement("blockquote");
+        q.className = "m-0 grid gap-2 rounded-xl border border-line bg-card p-5";
+        const p = document.createElement("p");
+        p.className = "text-[15.5px]";
+        p.textContent = `“${t.quote!.trim()}”`;
+        const by = document.createElement("footer");
+        by.className = "text-[13.5px] font-semibold text-ink-soft";
+        by.textContent = [t.name!.trim(), t.area?.trim()].filter(Boolean).join(", ");
+        q.append(p, by);
+        return q;
+      }),
+    );
+    section.hidden = false;
+  } catch {
+    /* stays hidden */
+  }
+}
+
 /* -------------------------------------------------------- enquiry form ---- */
 const panels = Array.from(document.querySelectorAll<HTMLElement>("#enquiry-form [data-step]"));
 const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>("#enquiry-form [data-goto]"));
@@ -583,8 +720,9 @@ if (form) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { ok?: boolean; emailed?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; emailed?: boolean; error?: string; id?: number };
       if (res.ok && data.ok) {
+        const followUp = whatsappFollowUp(data.id);
         form.hidden = true;
         result.textContent =
           data.emailed === false
@@ -592,6 +730,7 @@ if (form) {
             : "Thanks — your enquiry is on its way. We'll check availability and reply personally, as soon as we can. Nothing is booked or paid until we've confirmed with you.";
         result.className = (data.emailed === false ? "enq-err" : "enq-ok") + " mt-6";
         result.hidden = false;
+        if (followUp) result.after(followUp);
         result.focus();
       } else {
         showStepError(3, data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.");
@@ -608,3 +747,5 @@ if (form) {
 
 hydrate();
 renderCalendar();
+loadGallery();
+loadTestimonials();

@@ -687,6 +687,78 @@ await test("Phase 3", "Structured data parses, matches the D1 prices, names the 
   assert.equal(ld.address.addressCountry, "IM");
 });
 
+const { runReminders } = await import("../worker/lib/reminders.ts");
+
+await test("Phase 4", "Prepared features ship switched off: no cron trigger, both settings '0', pricing exposes the follow-up flag", async () => {
+  const wr = readFileSync("wrangler.jsonc", "utf8");
+  assert.ok(!/"triggers"\s*:/.test(wr), "no cron trigger configured");
+  const fresh = makeD1("db/migrations");
+  const get = (k: string) => (fresh.raw.prepare("SELECT value FROM settings WHERE key = ?").get(k) as any)?.value;
+  assert.equal(get("reminders_enabled"), "0");
+  assert.equal(get("whatsapp_followup"), "0");
+  const r = await call("GET", "/api/pricing");
+  assert.equal(r.body.settings.whatsapp_followup, "0");
+  const e = await call("POST", "/api/enquiry", enquiry({ preferred_start: daysFromNow(200) }));
+  assert.equal(typeof e.body.id, "number", "enquiry id returned for the follow-up message");
+});
+
+await test("Phase 4", "Reminders: nothing is sent while the switch is off, even with mail configured", async () => {
+  const savedDB = DB;
+  DB = makeD1("db/migrations"); env = baseEnv();
+  try {
+    smtpState.mode = "ok"; smtpState.sessions.length = 0;
+    const tomorrow = iso(new RealDate(RealDate.now() + 86400000));
+    await call("POST", "/api/enquiry", enquiry({ preferred_start: tomorrow, rate_plan_code: "24h" }));
+    await admin("POST", `/enquiries/${lastId()}/confirm`);
+    smtpState.sessions.length = 0;
+    const run = await runReminders(env);
+    assert.equal(run.enabled, false);
+    assert.equal(smtpState.sessions.length, 0);
+  } finally { DB = savedDB; env = baseEnv(); }
+});
+
+await test("Phase 4", "Reminders when switched on: day-before handover and return emails, once each; Amanda's summary; failures release the claim", async () => {
+  const savedDB = DB;
+  DB = makeD1("db/migrations"); env = baseEnv();
+  try {
+    DB.raw.exec("UPDATE settings SET value = '1' WHERE key = 'reminders_enabled'");
+    const iomToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Isle_of_Man" }).format(new RealDate());
+    const plus = (n: number) => iso(new RealDate(new RealDate(iomToday + "T12:00:00Z").getTime() + n * 86400000));
+    // A: starts tomorrow (confirmed via the normal flow)
+    await call("POST", "/api/enquiry", enquiry({ preferred_start: plus(1), rate_plan_code: "24h", name: "Starter", email: "starter@example.com" }));
+    await admin("POST", `/enquiries/${lastId()}/confirm`);
+    // B: out now, due back tomorrow
+    await call("POST", "/api/enquiry", enquiry({ preferred_start: plus(3), rate_plan_code: "24h", name: "Returner", email: "returner@example.com" }));
+    await admin("POST", `/enquiries/${lastId()}/confirm`);
+    const bId = (DB.raw.prepare("SELECT id FROM diary WHERE name = 'Returner'").get() as any).id;
+    DB.raw.prepare("UPDATE diary SET start_date = ?, end_date = ? WHERE id = ?").run(plus(-1), plus(1), bId);
+    await admin("POST", `/diary/${bId}/handover`, { checks: {}, deposit_pence: 7500 });
+    // C: goes out today (for Amanda's summary)
+    DB.raw.prepare("INSERT INTO diary (start_date, end_date, kind, name) VALUES (?, ?, 'booking', 'Today Job')").run(iomToday, plus(1));
+    smtpState.mode = "ok"; smtpState.sessions.length = 0;
+    const run = await runReminders(env);
+    assert.equal(run.enabled, true);
+    const to = smtpState.sessions.map((x) => x.messages[0]!.to[0]);
+    assert.ok(to.includes("RCPT TO:<starter@example.com>"), JSON.stringify(to));
+    assert.ok(to.includes("RCPT TO:<returner@example.com>"));
+    assert.ok(to.includes("RCPT TO:<bookings@sparklecarpets.im>"), "summary to Amanda");
+    const startMail = smtpState.sessions.find((x) => x.messages[0]!.to[0]!.includes("starter"))!.messages[0]!.data;
+    assert.ok(startMail.includes("starts tomorrow") && !/£\d/.test(startMail), "no prices or private data in reminders");
+    smtpState.sessions.length = 0;
+    const again = await runReminders(env);
+    assert.deepEqual(again.sent, ["summary"], "customer reminders never repeat");
+    // failure path: a new hire starting tomorrow, mail server rejects login
+    await call("POST", "/api/enquiry", enquiry({ preferred_start: plus(1), rate_plan_code: "24h", name: "Failer", email: "failer@example.com" }));
+    DB.raw.prepare("INSERT INTO diary (start_date, end_date, kind, name, enquiry_id) VALUES (?, ?, 'booking', 'Failer', ?)").run(plus(1), plus(1), lastId());
+    smtpState.mode = "auth_fail";
+    const bad = await runReminders(env);
+    smtpState.mode = "ok";
+    assert.equal(bad.failed.filter((f) => f.startsWith("reminder_handover")).length, 1);
+    assert.equal((DB.raw.prepare("SELECT reminder_handover_sent_at AS s FROM diary WHERE name = 'Failer'").get() as any).s, null, "claim released for a retry");
+    assert.ok(DB.raw.prepare("SELECT 1 FROM audit_log WHERE action = 'reminder.failed'").get());
+  } finally { DB = savedDB; env = baseEnv(); }
+});
+
 /* ------------------------------------------------------------- report ---- */
 let fail = 0;
 for (const r of results) {

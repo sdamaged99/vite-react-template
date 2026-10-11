@@ -36,7 +36,7 @@ export function smtpConfigured(env: Env): boolean {
   return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASS && env.MAIL_FROM && env.MAIL_TO);
 }
 
-function cfg(env: Env): SmtpConfig {
+export function cfg(env: Env): SmtpConfig {
   return { host: env.SMTP_HOST!, port: Number(env.SMTP_PORT), user: env.SMTP_USER!, pass: env.SMTP_PASS! };
 }
 

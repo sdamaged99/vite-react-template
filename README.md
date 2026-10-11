@@ -67,6 +67,15 @@ The browser tests run the pages unstyled (no Tailwind build offline), so they co
 2. Update `terms/index.html` (body, version number, effective date) and regenerate `worker/lib/terms.ts` with `node scripts/gen-terms.mjs` (add the new version to its list and point `CURRENT_TERMS` at it); the module holds every version's text and SHA-256. Keep the page's figures identical to the canonical text file: the page is the published copy of a hashed document, so a price change means publishing a new version, not editing this one.
 3. Nothing else: enquiries record the version and hash current at submission, and booking confirmations embed the accepted version's full text, so existing bookings are never moved onto newer terms.
 
+## Prepared features (built, switched off)
+
+Each needs a deliberate change before it does anything. Migration `0011_prepared_features.sql` adds their storage with both switches off.
+
+- **Collection and return reminders** (`worker/lib/reminders.ts`): emails the customer the day before handover and the day before return, once each, plus a short "today" summary to `MAIL_TO`. To turn on: (1) add `"triggers": { "crons": ["0 7 * * *"] }` to `wrangler.jsonc` (07:00 UTC is 08:00 BST / 07:00 GMT), deploy; (2) in the D1 console `UPDATE settings SET value = '1' WHERE key = 'reminders_enabled';`. Needs the SMTP secrets. Cron Triggers are free.
+- **WhatsApp follow-up after an enquiry** (`whatsappFollowUp` in `src/main.ts`): a button on the success message that opens the customer's WhatsApp with the enquiry number, package, dates, delivery choice/area and estimate pre-filled (never name, phone, email or address). To turn on: set the verified number in `whatsapp_number`, then `UPDATE settings SET value = '1' WHERE key = 'whatsapp_followup';`.
+- **Photo gallery** (`public/gallery/gallery.json`): add genuine photos to `public/gallery/` and list them, e.g. `{ "src": "/gallery/machine-front.jpg", "alt": "Our Big Green in the hallway", "genuine": true }`. Before/after pairs: `{ "kind": "before-after", "before": "/gallery/stairs-before.jpg", "after": "/gallery/stairs-after.jpg", "alt": "Stair carpet", "genuine": true, "consent": true }`, with the homeowner's consent recorded. Entries without `genuine: true` (and `consent: true` for pairs), or images not in `/gallery/`, are ignored. The section stays hidden while the list is empty.
+- **Testimonials** (`public/reviews/testimonials.json`): `{ "quote": "…", "name": "Jo", "area": "Peel", "permission": "written (email 12 Nov 2026)" }`. Customer's own words, first name and area only, with written permission noted. No review structured data is added (self-published reviews aren't eligible for rich results).
+
 ## Repository documentation
 
 - `PROJECT_CONTEXT.md` — background, architecture and the decision log
