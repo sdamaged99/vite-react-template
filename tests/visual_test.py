@@ -211,21 +211,47 @@ with sync_playwright() as p:
         if d.weekday() == 4:
             free = d
             break
-    pg.select_option("#enq-plan", "weekend")
-    pg.fill("#enq-start", free.isoformat())
-    pg.dispatch_event("#enq-start", "change")
-    pg.select_option("#enq-fulfilment", "both")
-    pg.select_option("#enq-area", "Ballasalla, Derbyhaven")
-    pg.check('input[name="extras"][value="solution"]')
-    est = pg.locator("#estimate")
-    est.scroll_into_view_if_needed()
-    est.screenshot(path=os.path.join(SHOTS, "estimate-320-itemised.png"))
-    pg.select_option("#enq-area", "__other")
-    est.screenshot(path=os.path.join(SHOTS, "estimate-320-quoted.png"))
-    report["estimate@320"] = pg.evaluate(AUDIT_JS)
-    pg.locator("#book").screenshot(path=os.path.join(SHOTS, "booking-320.png"))
-    pg.locator("details.faq-item").first.click()
-    pg.locator("#faq").screenshot(path=os.path.join(SHOTS, "faq-320-open.png"))
+    def pick(pg, d):
+        btn = pg.locator(f'button.cal-day[data-iso="{d.isoformat()}"]')
+        if not btn.is_visible():
+            pg.locator(".cal-month[data-active] [data-cal-next]").click()
+        btn.click()
+
+    for w, tag in [(320, "320"), (1280, "1280")]:
+        if w != 320:
+            c.close()
+            c = ctx_for(w)
+            pg = c.new_page()
+            pg.goto(BASE + "/", wait_until="networkidle")
+            pg.wait_for_selector("button.cal-day")
+        pg.select_option("#enq-plan", "weekend")
+        pick(pg, free)
+        pg.check('input[name="extras"][value="solution"]')
+        pg.evaluate("document.documentElement.style.scrollBehavior='auto'")
+        pg.locator("#book").screenshot(path=os.path.join(SHOTS, f"step1-{tag}.png"))
+        report[f"step1@{w}"] = pg.evaluate(AUDIT_JS)
+        pg.locator('[data-step="1"] [data-next]').click()
+        pg.select_option("#enq-fulfilment", "both")
+        pg.select_option("#enq-area", "Ballasalla, Derbyhaven")
+        if w == 320:
+            pg.click("#estimate summary")  # expand the compact bar
+        pg.locator("#book").screenshot(path=os.path.join(SHOTS, f"step2-{tag}-estimate-open.png"))
+        report[f"step2@{w}"] = pg.evaluate(AUDIT_JS)
+        if w == 320:
+            pg.click("#estimate summary")
+        pg.fill('input[name="address"]', "1 Main Road")
+        pg.locator('[data-step="2"] [data-next]').click()
+        pg.locator("#book").screenshot(path=os.path.join(SHOTS, f"step3-{tag}.png"))
+        report[f"step3@{w}"] = pg.evaluate(AUDIT_JS)
+        if w == 320:
+            # mid-scroll view: the sticky compact estimate stays in view while filling details
+            pg.locator("#enquiry-form button[type=submit]").scroll_into_view_if_needed()
+            pg.wait_for_timeout(200)
+            top = pg.evaluate("() => document.getElementById('estimate').getBoundingClientRect().top")
+            report["sticky-estimate@320"] = {} if 55 <= top <= 80 else {"sticky_failed_top": top}
+            pg.screenshot(path=os.path.join(SHOTS, "step3-320-viewport.png"))
+            pg.locator("details.faq-item").first.click()
+            pg.locator("#faq").screenshot(path=os.path.join(SHOTS, "faq-320-open.png"))
     c.close()
     browser.close()
 

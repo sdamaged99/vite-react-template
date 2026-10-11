@@ -77,6 +77,7 @@ const isFriday = sharedIsFriday;
 const fmtDay = (iso: string) =>
   new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
+
 /* --------------------------------------------------------- form wiring ---- */
 const form = document.getElementById("enquiry-form") as HTMLFormElement | null;
 const startInput = document.getElementById("enq-start") as HTMLInputElement | null;
@@ -84,15 +85,20 @@ const planSelect = document.getElementById("enq-plan") as HTMLSelectElement | nu
 const fulfilSelect = document.getElementById("enq-fulfilment") as HTMLSelectElement | null;
 const areaSelect = document.getElementById("enq-area") as HTMLSelectElement | null;
 const spanNote = document.getElementById("enq-span");
+const estimateBox = document.getElementById("estimate") as HTMLDetailsElement | null;
 if (startInput) startInput.min = todayIso();
 
+const setText = (id: string, text: string) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+};
+
 function updateEstimate() {
-  const box = document.getElementById("estimate");
-  if (!box || !planSelect) return;
+  if (!estimateBox || !planSelect) return;
   const rate = pricing?.rates.find((r) => r.code === planSelect.value);
   const deposit = Number(pricing?.settings["deposit_pence"] ?? NaN);
   if (!rate || Number.isNaN(deposit)) {
-    box.hidden = true;
+    estimateBox.hidden = true;
     return;
   }
   const f = (fulfilSelect?.value ?? "self") as Fulfilment;
@@ -109,12 +115,8 @@ function updateEstimate() {
   const extrasPence = chosenExtras.map((a) => a.price_pence);
   const est = computeEstimate({ hirePence: rate.price_pence, transportPence: transport, extrasPence, depositPence: deposit });
 
-  const set = (id: string, text: string) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
-  };
-  set("est-hire-label", rate.label);
-  set("est-hire", gbp(est.hirePence));
+  setText("est-hire-label", rate.label);
+  setText("est-hire", gbp(est.hirePence));
   const extrasBox = document.getElementById("est-extras");
   if (extrasBox) {
     extrasBox.replaceChildren(
@@ -135,21 +137,37 @@ function updateEstimate() {
   }
   const transportRow = document.getElementById("est-transport-row");
   if (transportRow) transportRow.hidden = journeys === 0;
-  set(
+  setText(
     "est-transport-label",
     f === "deliver_only" ? "Delivery (one journey)" : f === "collect_only" ? "Collection (one journey)" : "Delivery & collection (both journeys)",
   );
-  set("est-transport", est.transportQuoted ? "To be quoted" : gbp(est.transportPence ?? 0));
-  set("est-deposit", gbp(est.depositPence));
-  set("est-due", est.dueAtHandoverPence === null ? "To be quoted" : gbp(est.dueAtHandoverPence));
-  set("est-eff", est.effectivePence === null ? "To be quoted" : gbp(est.effectivePence));
-  box.hidden = false;
+  setText("est-transport", est.transportQuoted ? "To be quoted" : gbp(est.transportPence ?? 0));
+  setText("est-deposit", gbp(est.depositPence));
+  const due = est.dueAtHandoverPence === null ? "To be quoted" : gbp(est.dueAtHandoverPence);
+  setText("est-due", due);
+  setText("est-summary-total", due);
+  setText("est-eff", est.effectivePence === null ? "To be quoted" : gbp(est.effectivePence));
+  const start = startInput?.value ?? "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(start)) {
+    const days = covered(start, planSelect.value);
+    setText("est-dates", days.length === 1 ? fmtDay(days[0]!) : `${fmtDay(days[0]!)} to ${fmtDay(days[days.length - 1]!)}`);
+  } else {
+    setText("est-dates", "");
+  }
+  estimateBox.hidden = false;
 }
 
-function setSubmitBlocked(blocked: boolean) {
-  const submit = document.querySelector<HTMLButtonElement>("#enquiry-form button[type=submit]");
-  if (submit) submit.disabled = blocked;
+// Desktop shows the estimate open beside the steps; smaller screens get a
+// compact bar the customer can expand.
+const desktop = window.matchMedia("(min-width: 1024px)");
+function syncEstimateOpen() {
+  if (estimateBox) estimateBox.open = desktop.matches;
 }
+desktop.addEventListener("change", syncEstimateOpen);
+syncEstimateOpen();
+estimateBox?.querySelector("summary")?.addEventListener("click", (e) => {
+  if (desktop.matches) e.preventDefault();
+});
 
 function updateSpanNote() {
   if (!spanNote || !planSelect) return;
@@ -158,7 +176,6 @@ function updateSpanNote() {
   weekendNotFriday = false;
   const conflictEl = document.getElementById("est-conflict");
   if (conflictEl) conflictEl.hidden = true;
-  setSubmitBlocked(false);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) {
     spanNote.textContent = planSelect.value === "weekend" ? "Weekend hires run Friday to Monday morning." : "";
     return;
@@ -166,7 +183,6 @@ function updateSpanNote() {
   if (planSelect.value === "weekend" && !isFriday(start)) {
     weekendNotFriday = true;
     spanNote.textContent = "Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length.";
-    setSubmitBlocked(true);
     return;
   }
   const days = covered(start, planSelect.value);
@@ -177,7 +193,6 @@ function updateSpanNote() {
   spanNote.textContent = text;
   dateClash = clash;
   if (conflictEl) conflictEl.hidden = !clash;
-  setSubmitBlocked(clash);
 }
 
 function repaintCalendar() {
@@ -205,7 +220,23 @@ function repaintCalendar() {
 function onDayClick(iso: string) {
   if (!startInput) return;
   startInput.value = iso;
+  clearStepError(1);
   repaintCalendar();
+}
+
+let activeMonth = 0;
+function showMonth(i: number) {
+  const months = Array.from(document.querySelectorAll<HTMLElement>("#availability-cal .cal-month"));
+  if (months.length === 0) return;
+  activeMonth = Math.max(0, Math.min(months.length - 1, i));
+  months.forEach((m, k) => {
+    if (k === activeMonth) m.setAttribute("data-active", "");
+    else m.removeAttribute("data-active");
+    const prev = m.querySelector<HTMLButtonElement>("[data-cal-prev]");
+    const next = m.querySelector<HTMLButtonElement>("[data-cal-next]");
+    if (prev) prev.disabled = k === 0;
+    if (next) next.disabled = k === months.length - 1;
+  });
 }
 
 async function renderCalendar() {
@@ -216,22 +247,41 @@ async function renderCalendar() {
     if (res.ok) busy = ((await res.json()) as { unavailable: typeof busy }).unavailable;
     else return;
   } catch {
-    return; // leave the explanatory text in place
+    return; // leave the explanatory text and the typed-date field in place
   }
   const [iomYear, iomMonth] = todayIso().split("-").map(Number) as [number, number];
   const months: HTMLElement[] = [];
   for (let m = 0; m < 2; m++) {
     const first = new Date(iomYear, iomMonth - 1 + m, 1);
+    const monthName = first.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     const wrap = document.createElement("div");
     wrap.className = "cal-month";
+    const head = document.createElement("div");
+    head.className = "cal-head";
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.className = "cal-nav";
+    prev.dataset.calPrev = "";
+    prev.setAttribute("aria-label", "Previous month");
+    prev.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    prev.addEventListener("click", () => showMonth(activeMonth - 1));
     const title = document.createElement("div");
-    title.className = "cal-title";
-    title.textContent = first.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    title.className = "cal-title grow text-center lg:text-left";
+    title.textContent = monthName;
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "cal-nav";
+    next.dataset.calNext = "";
+    next.setAttribute("aria-label", "Next month");
+    next.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    next.addEventListener("click", () => showMonth(activeMonth + 1));
+    head.append(prev, title, next);
     const grid = document.createElement("div");
     grid.className = "cal-grid";
     for (const d of ["M", "T", "W", "T", "F", "S", "S"]) {
       const h = document.createElement("span");
       h.className = "cal-dow";
+      h.setAttribute("aria-hidden", "true");
       h.textContent = d;
       grid.append(h);
     }
@@ -256,12 +306,18 @@ async function renderCalendar() {
       }
       grid.append(cell);
     }
-    wrap.append(title, grid);
+    wrap.append(head, grid);
     months.push(wrap);
   }
   mount.replaceChildren(...months);
+  // The calendar works, so the typed-date field is redundant; it stays in the
+  // form (hidden) as the value the calendar writes to.
+  const fallback = document.getElementById("enq-date-fallback");
+  if (fallback) fallback.hidden = true;
   const legend = document.getElementById("cal-legend");
   if (legend) legend.hidden = false;
+  const start = startInput?.value ?? "";
+  showMonth(start && start.slice(0, 7) !== todayIso().slice(0, 7) ? 1 : 0);
   repaintCalendar();
 }
 
@@ -345,14 +401,86 @@ async function hydrate() {
 }
 
 /* -------------------------------------------------------- enquiry form ---- */
+const panels = Array.from(document.querySelectorAll<HTMLElement>("#enquiry-form [data-step]"));
+const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>("#enquiry-form [data-goto]"));
+let currentStep = 1;
+let furthestStep = 1;
+
+const panel = (n: number) => panels.find((p) => p.dataset.step === String(n));
+function stepErrorEl(n: number): HTMLElement | null {
+  return n === 3 ? document.getElementById("enquiry-error") : (panel(n)?.querySelector<HTMLElement>(".step-error") ?? null);
+}
+function clearStepError(n: number) {
+  const el = stepErrorEl(n);
+  if (el) el.hidden = true;
+}
+function showStepError(n: number, msg: string) {
+  const el = stepErrorEl(n);
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+function showStep(n: number, focus = true) {
+  currentStep = n;
+  furthestStep = Math.max(furthestStep, n);
+  for (const p of panels) p.hidden = p.dataset.step !== String(n);
+  for (const t of tabs) {
+    const k = Number(t.dataset.goto);
+    t.disabled = k > furthestStep;
+    if (k === n) t.setAttribute("aria-current", "step");
+    else t.removeAttribute("aria-current");
+  }
+  if (focus) {
+    const title = panel(n)?.querySelector<HTMLElement>(".step-title");
+    title?.focus({ preventScroll: true });
+    document.getElementById("book")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+}
+
+const isShown = (el: HTMLElement) => !el.closest("[hidden]");
+
+/** Returns true when step n is complete; otherwise shows why and returns false. */
+function validateStep(n: number, report = true): boolean {
+  const p = panel(n);
+  if (!p) return true;
+  if (n === 1) {
+    const start = startInput?.value ?? "";
+    let msg = "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) msg = "Please choose a start date.";
+    else if (start < todayIso()) msg = "Please pick a start date from today onwards.";
+    else if (weekendNotFriday) msg = "Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length.";
+    else if (dateClash) msg = "Those dates are unavailable; please pick different dates on the calendar.";
+    if (msg) {
+      if (report) showStepError(1, msg);
+      return false;
+    }
+  }
+  const controls = Array.from(p.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"))
+    .filter((el) => isShown(el) && el.name !== "website");
+  const bad = controls.find((el) => !el.checkValidity());
+  if (bad) {
+    if (report) {
+      clearStepError(n);
+      bad.reportValidity();
+    }
+    return false;
+  }
+  clearStepError(n);
+  return true;
+}
+
 if (form) {
   const deliveryFields = document.getElementById("enq-delivery-fields");
   const otherWrap = document.getElementById("enq-other-wrap");
+  const otherInput = document.getElementById("enq-other") as HTMLInputElement | null;
   const syncDelivery = () => {
     const f = (fulfilSelect?.value ?? "self") as Fulfilment;
     const needsTransport = journeysFor(f) > 0;
     if (deliveryFields) deliveryFields.hidden = !needsTransport;
-    if (otherWrap) otherWrap.hidden = areaSelect?.value !== "__other";
+    const otherShown = needsTransport && areaSelect?.value === "__other";
+    if (otherWrap) otherWrap.hidden = !otherShown;
+    if (otherInput) otherInput.required = otherShown;
     const addressInput = form?.querySelector<HTMLInputElement>('input[name="address"]');
     if (addressInput) addressInput.required = needsTransport;
     if (areaSelect) areaSelect.required = needsTransport;
@@ -363,9 +491,38 @@ if (form) {
   for (const cb of document.querySelectorAll('#enquiry-form input[name="extras"]')) {
     cb.addEventListener("change", updateEstimate);
   }
-  planSelect?.addEventListener("change", repaintCalendar);
-  startInput?.addEventListener("change", repaintCalendar);
+  planSelect?.addEventListener("change", () => {
+    clearStepError(1);
+    repaintCalendar();
+  });
+  startInput?.addEventListener("change", () => {
+    clearStepError(1);
+    repaintCalendar();
+  });
   syncDelivery();
+
+  for (const btn of form.querySelectorAll<HTMLButtonElement>("[data-next]")) {
+    btn.addEventListener("click", () => {
+      if (validateStep(currentStep)) showStep(currentStep + 1);
+    });
+  }
+  for (const btn of form.querySelectorAll<HTMLButtonElement>("[data-back]")) {
+    btn.addEventListener("click", () => showStep(currentStep - 1));
+  }
+  for (const t of tabs) {
+    t.addEventListener("click", () => {
+      const target = Number(t.dataset.goto);
+      // Going back is always free; going forward re-checks the steps in between.
+      for (let k = currentStep; k < target; k++) {
+        if (!validateStep(k)) {
+          if (k !== currentStep) showStep(k);
+          return;
+        }
+      }
+      showStep(target);
+    });
+  }
+  showStep(1, false);
 
   let turnstileToken = "";
   if (TURNSTILE_SITE_KEY) {
@@ -385,29 +542,18 @@ if (form) {
   }
 
   const result = document.getElementById("enquiry-result");
-  const errorEl = document.getElementById("enquiry-error");
   const submitBtn = form.querySelector("button[type=submit]") as HTMLButtonElement | null;
-  const showError = (msg: string) => {
-    if (!errorEl) return;
-    errorEl.textContent = msg;
-    errorEl.hidden = false;
-  };
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!result) return;
-    if (errorEl) errorEl.hidden = true;
-    // Native constraint checks (required, email, min date), shown on the field itself.
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
-    if (dateClash) {
-      showError("Those dates are unavailable; please pick different dates on the calendar.");
-      return;
-    }
-    if (weekendNotFriday) {
-      showError("Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length.");
-      return;
+    clearStepError(3);
+    // Every step is re-checked: a customer may have gone back and changed something.
+    for (const n of [1, 2, 3]) {
+      if (!validateStep(n, false)) {
+        if (n !== currentStep) showStep(n);
+        validateStep(n);
+        return;
+      }
     }
     result.hidden = true;
     if (submitBtn) {
@@ -415,7 +561,6 @@ if (form) {
       submitBtn.textContent = "Sending…";
     }
     const fd = new FormData(form);
-    const otherInput = document.getElementById("enq-other") as HTMLInputElement | null;
     const rawArea = String(fd.get("area") ?? "");
     const payload = {
       name: fd.get("name"),
@@ -445,14 +590,14 @@ if (form) {
           data.emailed === false
             ? "Your enquiry has been saved, but our email notification failed, so we may not see it straight away. If you haven't heard from us within two days, please email bookings@sparklecarpets.im directly, quoting your name and dates."
             : "Thanks — your enquiry is on its way. We'll check availability and reply personally, as soon as we can. Nothing is booked or paid until we've confirmed with you.";
-        result.className = data.emailed === false ? "enq-err" : "enq-ok";
+        result.className = (data.emailed === false ? "enq-err" : "enq-ok") + " mt-6";
         result.hidden = false;
         result.focus();
       } else {
-        showError(data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.");
+        showStepError(3, data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.");
       }
     } catch {
-      showError("We couldn't send that just now; please email bookings@sparklecarpets.im instead.");
+      showStepError(3, "We couldn't send that just now; please email bookings@sparklecarpets.im instead.");
     }
     if (submitBtn) {
       submitBtn.disabled = false;

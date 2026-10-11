@@ -108,78 +108,122 @@ with sync_playwright() as p:
         assert free.get_attribute("aria-label").startswith("Start enquiry on")
     check("11 Overlap", "Calendar marks booked and past days unavailable, with accessible labels", cal_render)
 
+    # ---- helpers that drive the three-step form like a customer would ----
+    def tab(pg, n):
+        pg.click(f'#enquiry-form [data-goto="{n}"]')
+
+    def cont(pg):
+        pg.locator('#enquiry-form [data-step]:not([hidden]) [data-next]').click()
+
+    def pick_date(pg, d):
+        """Choose a start date: via the calendar when it's there (paging months
+        on small screens), otherwise via the typed-date fallback."""
+        iso = d.isoformat()
+        if pg.locator("button.cal-day").count() == 0:
+            pg.fill("#enq-start", iso); pg.dispatch_event("#enq-start", "change")
+            return
+        btn = pg.locator(f'button.cal-day[data-iso="{iso}"]')
+        for _ in range(2):
+            if btn.is_visible():
+                break
+            nxt = pg.locator(".cal-month[data-active] [data-cal-next]")
+            prv = pg.locator(".cal-month[data-active] [data-cal-prev]")
+            (nxt if nxt.is_enabled() else prv).click()
+        btn.click()
+
+    def fill_all(pg, name, d, plan="24h", fulfil="self", area=None, address=None, email="f@example.com", terms=True):
+        tab(pg, 1)
+        pg.select_option("#enq-plan", plan)
+        pick_date(pg, d)
+        cont(pg)
+        pg.select_option("#enq-fulfilment", fulfil)
+        if area:
+            pg.select_option("#enq-area", area)
+        if address:
+            pg.fill('input[name="address"]', address)
+        cont(pg)
+        pg.fill('input[name="name"]', name); pg.fill('input[name="phone"]', "07624 333333"); pg.fill('input[name="email"]', email)
+        if terms:
+            pg.check('input[name="terms_acknowledged"]')
+
+    def submit(pg):
+        pg.click("#enquiry-form button[type=submit]")
+
     def client_overlap():
         page.select_option("#enq-plan", "48h")
         day_before = busy_start - dt.timedelta(days=1)
-        page.click(f'button.cal-day[data-iso="{day_before}"]')
+        pick_date(page, day_before)
         assert page.input_value("#enq-start") == day_before.isoformat()
         assert page.locator("#est-conflict").is_visible(), "conflict notice should show"
-        assert page.locator("#enquiry-form button[type=submit]").is_disabled()
+        cont(page)
+        assert page.locator('[data-step="1"]').is_visible(), "must not move on with clashing dates"
+        assert "unavailable" in page.text_content('[data-step="1"] .step-error')
         page.select_option("#enq-plan", "24h")  # now only the free day
         assert not page.locator("#est-conflict").is_visible()
-        assert page.locator("#enquiry-form button[type=submit]").is_enabled()
-    check("11 Overlap", "Client blocks a span that runs into a booked day, and clears when it no longer does", client_overlap)
+        cont(page)
+        assert page.locator('[data-step="2"]').is_visible()
+        tab(page, 1)
+    check("11 Overlap", "Client blocks a span that runs into a booked day (cannot continue), and clears when it no longer does", client_overlap)
 
     def weekend_client():
         page.select_option("#enq-plan", "weekend")
-        days = page.locator("button.cal-day.cal-free")
         enabled_non_friday = page.evaluate(
             """() => [...document.querySelectorAll('button.cal-day.cal-free')]
                  .filter(b => !b.disabled && new Date(b.dataset.iso + 'T12:00:00Z').getUTCDay() !== 5).length"""
         )
         assert enabled_non_friday == 0, f"{enabled_non_friday} non-Friday days still clickable"
-        sat = first(lambda d: d.weekday() == 5 and not (busy_start <= d <= busy_end))
-        page.fill("#enq-start", sat.isoformat())
-        page.dispatch_event("#enq-start", "change")
-        assert "starts on a Friday" in page.text_content("#enq-span")
-        assert page.locator("#enquiry-form button[type=submit]").is_disabled()
         fri = first(lambda d: d.weekday() == 4 and not any(busy_start <= d + dt.timedelta(days=k) <= busy_end for k in range(4)))
-        page.click(f'button.cal-day[data-iso="{fri}"]')
-        mon = fri + dt.timedelta(days=3)
+        pick_date(page, fri)
         note = page.text_content("#enq-span")
         assert "Collect Friday, return Monday morning" in note, note
-        assert page.locator(f'button.cal-day[data-iso="{mon}"]').get_attribute("class").count("cal-sel") == 1 or mon.month not in (today.month, (today.month % 12) + 1)
-    check("12 Weekend/TZ", "Weekend: only Fridays selectable; a typed Saturday is blocked; span shows Fri-Mon", weekend_client)
+        mon = fri + dt.timedelta(days=3)
+        if page.locator(f'button.cal-day[data-iso="{mon}"]').count():
+            assert "cal-sel" in page.get_attribute(f'button.cal-day[data-iso="{mon}"]', "class")
+    check("12 Weekend/TZ", "Weekend: only Fridays selectable on the calendar; span shows Fri-Mon", weekend_client)
 
     def estimate_matrix():
         plans = {"24h": 30, "48h": 45, "weekend": 55, "3day": 60, "week": 95}
         zones = [("Castletown", 5), ("Ballasalla, Derbyhaven", 7.5), ("Douglas, Braddan, Onchan", 20), ("Ramsey, Andreas, Jurby", 40)]
-        fri = first(lambda d: d.weekday() == 4 and not any(busy_start <= d + dt.timedelta(days=k) <= busy_end for k in range(4)))
-        page.click(f'button.cal-day[data-iso="{fri}"]') if page.locator(f'button.cal-day[data-iso="{fri}"]').is_enabled() else None
+        fri = first(lambda d: d.weekday() == 4 and not any(busy_start <= d + dt.timedelta(days=k) <= busy_end for k in range(7)))
         def money(v):
             return f"£{v:.2f}" if v % 1 else f"£{int(v)}"
         checked = 0
         for plan, hire in plans.items():
-            page.select_option("#enq-plan", plan)
-            page.fill("#enq-start", fri.isoformat()); page.dispatch_event("#enq-start", "change")
-            for ful, mult in [("self", 0), ("deliver_only", 1), ("collect_only", 1), ("both", 2)]:
-                page.select_option("#enq-fulfilment", ful)
-                for area, one in (zones if mult else [("", 0)]):
-                    if area:
-                        page.select_option("#enq-area", area)
-                    for extra in (False, True):
-                        page.set_checked('input[name="extras"][value="solution"]', extra)
+            for extra in (False, True):
+                tab(page, 1)
+                page.select_option("#enq-plan", plan)
+                pick_date(page, fri)
+                page.set_checked('input[name="extras"][value="solution"]', extra)
+                cont(page)
+                for ful, mult in [("self", 0), ("deliver_only", 1), ("collect_only", 1), ("both", 2)]:
+                    page.select_option("#enq-fulfilment", ful)
+                    for area, one in (zones if mult else [("", 0)]):
+                        if area:
+                            page.select_option("#enq-area", area)
                         transport = one * mult
                         due = hire + transport + (5 if extra else 0) + 75
                         assert page.text_content("#est-hire") == money(hire), (plan, page.text_content("#est-hire"))
                         assert page.text_content("#est-deposit") == "£75"
                         assert page.text_content("#est-due") == money(due), (plan, ful, area, extra, page.text_content("#est-due"))
+                        assert page.text_content("#est-summary-total") == money(due), "compact summary matches"
                         assert page.text_content("#est-eff") == money(due - 75)
                         if mult:
                             assert page.text_content("#est-transport") == money(transport), (ful, area)
                         else:
-                            assert not page.locator("#est-transport-row").is_visible()
+                            assert page.get_attribute("#est-transport-row", "hidden") is not None
                         rows = page.locator("#est-extras > div")
                         assert rows.count() == (1 if extra else 0)
                         if extra:
                             assert "Additional detergent portion" in rows.first.text_content() and "£5" in rows.first.text_content()
                         checked += 1
+                page.select_option("#enq-fulfilment", "self")
+        tab(page, 1)
         page.set_checked('input[name="extras"][value="solution"]', False)
-        page.select_option("#enq-fulfilment", "self")
-        assert checked == 5 * (2 + 3 * 4 * 2), checked
+        assert checked == 5 * 2 * (1 + 3 * 4), checked
     check("13 Pricing", "Live estimate: every package x transport option (4 zones each) x extras, itemised", estimate_matrix)
 
     def other_area():
+        tab(page, 1); cont(page)
         page.select_option("#enq-fulfilment", "both")
         opts = page.eval_on_selector_all("#enq-area option", "os => os.map(o => o.value)")
         assert "__other" in opts, f"'Other location' option missing after prices load: {opts}"
@@ -187,34 +231,80 @@ with sync_playwright() as p:
         assert page.locator("#enq-other").is_visible()
         assert page.text_content("#est-transport") == "To be quoted"
         assert page.text_content("#est-due") == "To be quoted"
+        cont(page)
+        assert page.locator('[data-step="2"]').is_visible(), "town and address required before continuing"
         page.select_option("#enq-fulfilment", "self")
-    check("13 Pricing", "'Other location' stays available after live prices load and shows 'To be quoted'", other_area)
+        tab(page, 1)
+    check("13 Pricing", "'Other location' stays available after live prices load, shows 'To be quoted', requires a town", other_area)
 
-    def estimate_fits_mobile():
-        page.select_option("#enq-fulfilment", "both")
-        page.select_option("#enq-area", "__other")
-        box = page.eval_on_selector("#estimate", "e => ({sw: e.scrollWidth, cw: e.clientWidth})")
-        page.select_option("#enq-fulfilment", "self")
-        assert box["sw"] <= box["cw"], box
-    # (layout depends on Tailwind classes that aren't compiled here; recorded as not testable below)
+    def steps_back_keep_values():
+        reset(); load()
+        d = first(lambda d: d.weekday() < 4 and not (busy_start <= d <= busy_end + dt.timedelta(days=2)))
+        fill_all(page, "Back Tester", d, plan="48h", fulfil="both", area="Douglas, Braddan, Onchan", address="3 Hill St", terms=False)
+        page.fill('textarea[name="message"]', "keep me")
+        tab(page, 1)
+        assert page.input_value("#enq-plan") == "48h" and page.input_value("#enq-start") == d.isoformat()
+        tab(page, 2)
+        assert page.input_value("#enq-fulfilment") == "both" and page.input_value('input[name="address"]') == "3 Hill St"
+        tab(page, 3)
+        assert page.input_value('input[name="name"]') == "Back Tester" and page.input_value('textarea[name="message"]') == "keep me"
+        focused = page.evaluate("() => document.activeElement.id")
+        assert focused == "step3-title", focused
+        assert page.get_attribute('[data-goto="3"]', "aria-current") == "step"
+    check("Phase 1", "Back/forward between steps keeps every answer; focus moves to the step heading", steps_back_keep_values)
+
+    def cannot_skip_ahead():
+        reset(); load()
+        assert page.locator('[data-goto="2"]').is_disabled() and page.locator('[data-goto="3"]').is_disabled()
+        cont(page)
+        assert page.locator('[data-step="1"]').is_visible()
+        assert "choose a start date" in page.text_content('[data-step="1"] .step-error').lower()
+    check("Phase 1", "Steps can't be skipped: no date means no step 2; later tabs disabled until reached", cannot_skip_ahead)
+
+    def mobile_one_month_and_compact_estimate():
+        visible_months = page.evaluate("() => [...document.querySelectorAll('.cal-month')].filter(m => m.hasAttribute('data-active')).length")
+        assert visible_months == 1
+        assert page.locator(".cal-month[data-active] [data-cal-prev]").is_disabled()
+        page.locator(".cal-month[data-active] [data-cal-next]").click()
+        idx = page.evaluate("() => [...document.querySelectorAll('.cal-month')].findIndex(m => m.hasAttribute('data-active'))")
+        assert idx == 1
+        page.locator(".cal-month[data-active] [data-cal-prev]").click()
+        assert page.evaluate("() => document.getElementById('estimate').open") is False, "compact (closed) on phones"
+        page.click("#estimate summary")
+        assert page.evaluate("() => document.getElementById('estimate').open") is True
+        page.click("#estimate summary")
+        assert page.locator("#enq-date-fallback").is_hidden(), "typed date hidden while the calendar works"
+    check("Phase 1", "Phone width: one month at a time with prev/next; estimate is a compact expandable bar", mobile_one_month_and_compact_estimate)
+
+    def desktop_layout():
+        c = browser.new_context(viewport={"width": 1280, "height": 900})
+        c.route("**/fonts.*/**", lambda r: r.abort())
+        pg = c.new_page()
+        pg.goto(BASE + "/", wait_until="domcontentloaded")
+        pg.wait_for_selector("button.cal-day")
+        pg.wait_for_function("!document.getElementById('estimate').hidden")
+        assert pg.evaluate("() => document.getElementById('estimate').open") is True, "open beside the steps on desktop"
+        pg.click("#estimate summary")
+        assert pg.evaluate("() => document.getElementById('estimate').open") is True, "cannot be collapsed on desktop"
+        c.close()
+    check("Phase 1", "Desktop: estimate is open (not collapsible) beside the steps", desktop_layout)
 
     def validation():
         reset()
         load()
         before = sql("SELECT count(*) AS n FROM enquiries")[0]["n"]
-        page.click("#enquiry-form button[type=submit]")
+        d = first(lambda d: not (busy_start <= d <= busy_end + dt.timedelta(days=2)) and d.weekday() < 4)
+        tab(page, 1); page.select_option("#enq-plan", "24h"); pick_date(page, d); cont(page); cont(page)
+        submit(page)
         page.wait_for_timeout(300)
-        invalid = page.evaluate("() => [...document.querySelectorAll('#enquiry-form :invalid')].map(e => e.name)")
+        invalid = page.evaluate("() => [...document.querySelectorAll('#enquiry-form [data-step=\"3\"] :invalid')].map(e => e.name)")
         assert "name" in invalid and "terms_acknowledged" in invalid, invalid
         assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == before, "nothing should be sent"
         page.fill('input[name="name"]', "Pat Example")
         page.fill('input[name="phone"]', "07624 000000")
         page.fill('input[name="email"]', "not-an-email")
-        d = first(lambda d: not (busy_start <= d <= busy_end + dt.timedelta(days=2)) and d.weekday() < 4)
-        page.fill("#enq-start", d.isoformat()); page.dispatch_event("#enq-start", "change")
-        page.select_option("#enq-plan", "24h")
         page.check('input[name="terms_acknowledged"]')
-        page.click("#enquiry-form button[type=submit]")
+        submit(page)
         page.wait_for_timeout(300)
         assert page.evaluate("() => document.querySelector('input[name=email]').matches(':invalid')")
         assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == before
@@ -224,13 +314,14 @@ with sync_playwright() as p:
         lab = page.locator('label:has(input[name="terms_acknowledged"])').text_content()
         assert "I confirm that I have read the proposed Equipment Hire Terms & Conditions." in " ".join(lab.split()), lab
         assert page.locator('label:has(input[name="terms_acknowledged"]) a[href="/terms/"]').count() == 1
-        body = page.text_content("#enquiry-form")
-        assert "Submitting an enquiry does not create a confirmed booking or an obligation to pay." in " ".join(body.split())
-    check("15 Terms", "Acknowledgement checkbox wording, link and no-obligation line are as specified", unchecked_terms_named)
+        body = " ".join(page.text_content("#book").split())
+        assert "Submitting an enquiry does not create a confirmed booking or an obligation to pay." in body
+        assert "This is an enquiry, not a booking" in body
+    check("15 Terms", "Acknowledgement wording, link, no-obligation line and 'enquiry, not a booking' statement present", unchecked_terms_named)
 
     def submit_ok():
         page.fill('input[name="email"]', "pat@example.com")
-        page.click("#enquiry-form button[type=submit]")
+        submit(page)
         page.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
         rows = sql("SELECT name, email, rate_plan_code, terms_version, emailed, estimate_total_pence FROM enquiries")
         assert len(rows) == 1 and rows[0]["name"] == "Pat Example" and rows[0]["terms_version"] == "1.1" and rows[0]["emailed"] == 1, rows
@@ -241,15 +332,23 @@ with sync_playwright() as p:
         assert focused == "enquiry-result", focused
     check("14 Email", "Browser submission persists to D1, sends both emails, success message gets focus", submit_ok)
 
+    def submit_delivery_ok():
+        reset(); load()
+        d = first(lambda d: d.weekday() < 4 and not (busy_start <= d <= busy_end + dt.timedelta(days=2)), 10)
+        fill_all(page, "Del Ivery", d, plan="48h", fulfil="both", area="Ballasalla, Derbyhaven", address="9 Main Rd")
+        page.check('input[name="extras"][value="solution"]') if page.locator('input[name="extras"]').is_visible() else None
+        submit(page)
+        page.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
+        r = sql("SELECT fulfilment, area, address, estimate_total_pence FROM enquiries")[0]
+        assert r == {"fulfilment": "both", "area": "Ballasalla, Derbyhaven", "address": "9 Main Rd", "estimate_total_pence": 4500 + 1500 + 7500}, r
+    check("13 Pricing", "Delivery enquiry through all three steps stores area, address and the server-priced total", submit_delivery_ok)
+
     def submit_email_fail():
         reset(smtp="auth_fail")
         load()
-        page.fill('input[name="name"]', "Sam Example"); page.fill('input[name="phone"]', "07624 111111"); page.fill('input[name="email"]', "sam@example.com")
         d = first(lambda d: not (busy_start <= d <= busy_end) and d.weekday() < 4)
-        page.fill("#enq-start", d.isoformat()); page.dispatch_event("#enq-start", "change")
-        page.select_option("#enq-plan", "24h")
-        page.check('input[name="terms_acknowledged"]')
-        page.click("#enquiry-form button[type=submit]")
+        fill_all(page, "Sam Example", d, email="sam@example.com")
+        submit(page)
         page.wait_for_selector("#enquiry-result.enq-err", timeout=10000)
         assert "saved, but our email notification failed" in page.text_content("#enquiry-result")
         assert sql("SELECT emailed FROM enquiries")[0]["emailed"] == 0
@@ -259,12 +358,9 @@ with sync_playwright() as p:
         reset()
         load()
         d = first(lambda d: d.weekday() < 3)
-        page.fill('input[name="name"]', "Lee Example"); page.fill('input[name="phone"]', "07624 222222"); page.fill('input[name="email"]', "lee@example.com")
-        page.select_option("#enq-plan", "24h")
-        page.fill("#enq-start", d.isoformat()); page.dispatch_event("#enq-start", "change")
-        page.check('input[name="terms_acknowledged"]')
+        fill_all(page, "Lee Example", d, email="lee@example.com")
         sql("INSERT INTO diary (start_date, end_date, kind) VALUES (?, ?, 'booking')", [d.isoformat(), d.isoformat()])  # taken meanwhile
-        page.click("#enquiry-form button[type=submit]")
+        submit(page)
         page.wait_for_selector("#enquiry-error:not([hidden])", timeout=10000)
         assert "no longer available" in page.text_content("#enquiry-error")
         assert page.get_attribute("#enquiry-error", "role") == "alert"
@@ -318,10 +414,7 @@ with sync_playwright() as p:
 
     # ------------------------------------------- availability API failure -----
     def fill_basic(pg, name, d, plan="24h"):
-        pg.fill('input[name="name"]', name); pg.fill('input[name="phone"]', "07624 333333"); pg.fill('input[name="email"]', "f@example.com")
-        pg.select_option("#enq-plan", plan)
-        pg.fill("#enq-start", d.isoformat()); pg.dispatch_event("#enq-start", "change")
-        pg.check('input[name="terms_acknowledged"]')
+        fill_all(pg, name, d, plan=plan)
 
     def outage_page(fail_unavailable=None, fail_pricing=None, fail_enquiry=None):
         c = browser.new_context(viewport={"width": 375, "height": 800})
@@ -343,8 +436,9 @@ with sync_playwright() as p:
             sql("INSERT INTO diary (start_date, end_date, kind) VALUES (?, ?, 'booking')", [booked.isoformat(), booked.isoformat()])
             c, pg = outage_page(fail_unavailable=mode)
             assert pg.locator("button.cal-day").count() == 0, "no calendar should render"
-            assert "if it doesn't, just send the enquiry" in " ".join(pg.text_content("#availability-cal").split())
+            assert "if it doesn't, choose a date below" in " ".join(pg.text_content("#availability-cal").split())
             assert pg.locator("#cal-legend").is_hidden()
+            assert pg.locator("#enq-date-fallback").is_visible(), "typed date offered when the calendar can't load"
             fill_basic(pg, "Outage Booked", booked)
             pg.click("#enquiry-form button[type=submit]")
             pg.wait_for_selector("#enquiry-error:not([hidden])", timeout=10000)
@@ -371,8 +465,11 @@ with sync_playwright() as p:
         reset()
         sat = first(lambda d: d.weekday() == 5, 8)
         c, pg = outage_page(fail_unavailable="500")
-        fill_basic(pg, "Outage Weekend", sat, plan="weekend")
-        assert pg.locator("#enquiry-form button[type=submit]").is_disabled()
+        pg.select_option("#enq-plan", "weekend")
+        pick_date(pg, sat)
+        cont(pg)
+        assert pg.locator('[data-step="1"]').is_visible(), "a Saturday weekend start can't continue"
+        assert "starts on a Friday" in pg.text_content('[data-step="1"] .step-error')
         assert sql("SELECT count(*) AS n FROM enquiries")[0]["n"] == 0
         c.close()
     check("2 API failure", "Calendar API down: weekend rule still enforced in the browser", outage_weekend)
@@ -383,8 +480,7 @@ with sync_playwright() as p:
         c, pg = outage_page(fail_pricing="500")
         assert pg.locator("#estimate").is_hidden(), "no estimate without live prices"
         assert pg.text_content('[data-price-plan="24h"]') == "£30", "static published price stays"
-        fill_basic(pg, "Outage Pricing", free, plan="48h")
-        pg.select_option("#enq-fulfilment", "both"); pg.select_option("#enq-area", "Douglas, Braddan, Onchan"); pg.fill('input[name="address"]', "2 High St")
+        fill_all(pg, "Outage Pricing", free, plan="48h", fulfil="both", area="Douglas, Braddan, Onchan", address="2 High St")
         pg.click("#enquiry-form button[type=submit]")
         pg.wait_for_selector("#enquiry-result.enq-ok", timeout=10000)
         assert sql("SELECT estimate_total_pence AS t FROM enquiries")[0]["t"] == 4500 + 4000 + 7500, "server prices from D1 regardless"

@@ -129,6 +129,59 @@
   .cal-title {
     @apply text-[15px] font-bold;
   }
+  /* One month at a time below lg; both side by side from lg. */
+  .cal-month:not([data-active]) {
+    @apply max-lg:hidden;
+  }
+  .cal-head {
+    @apply mb-1 flex items-center gap-2;
+  }
+  .cal-nav {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-card text-ink disabled:opacity-35 lg:hidden;
+  }
+
+  /* Three-step enquiry */
+  .steps {
+    @apply m-0 grid list-none grid-cols-3 gap-2 p-0;
+  }
+  .step-tab {
+    @apply flex min-h-11 w-full items-center gap-2 rounded-xl border border-line bg-card px-2.5 py-2 text-left text-[13px] font-semibold leading-tight text-ink-soft sm:text-[14px] disabled:cursor-default disabled:opacity-60;
+  }
+  .step-tab[aria-current="step"] {
+    @apply border-chambray-deep bg-rec text-ink;
+  }
+  .step-num {
+    @apply grid h-6 w-6 shrink-0 place-items-center rounded-full bg-oat text-[12.5px] font-bold text-ink;
+  }
+  .step-tab[aria-current="step"] .step-num {
+    @apply bg-chambray-deep text-linen;
+  }
+  .step-panel {
+    @apply grid content-start gap-4;
+  }
+  .step-title {
+    @apply font-display text-[21px];
+  }
+  .step-nav {
+    @apply flex flex-wrap gap-3 pt-1;
+  }
+
+  /* Estimate: compact expandable bar on phones/tablets, open card on desktop */
+  .est-card {
+    @apply rounded-xl border border-line bg-card text-[14px] shadow-[0_6px_18px_-12px_rgba(42,51,64,0.45)] lg:shadow-none;
+  }
+  .est-summary {
+    @apply flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-2.5 lg:cursor-default lg:pb-0 [&::-webkit-details-marker]:hidden;
+  }
+  .est-chevron {
+    @apply shrink-0 text-ink-soft transition-transform lg:hidden;
+  }
+  .est-card[open] .est-chevron {
+    @apply rotate-180;
+  }
+  .est-body {
+    @apply grid max-h-[55vh] gap-1.5 overflow-y-auto px-4 pt-1 pb-3.5 lg:max-h-none lg:overflow-visible;
+  }
   .cal-grid {
     @apply grid grid-cols-7 gap-1 text-center text-[13px] tabular-nums;
   }

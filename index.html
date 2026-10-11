@@ -368,117 +368,157 @@
       <!-- Enquiry -->
       <section id="book" class="pb-14">
         <div class="shell">
-          <div class="grid gap-10 rounded-2xl bg-oat px-4 py-10 sm:px-7 md:grid-cols-[1fr_1.1fr] md:px-10 [&>*]:min-w-0">
-            <div class="grid content-start gap-4">
+          <div class="rounded-2xl bg-oat px-4 py-8 sm:px-7 md:px-10 md:py-10">
+            <div class="mb-6 grid gap-2">
               <h2 class="max-w-[22ch] text-[clamp(24px,3vw,32px)]">Check availability &amp; enquire</h2>
-              <p class="max-w-[46ch] text-[15px] text-ink-soft">
-                Tap a free date to start your enquiry; days struck through are already taken. We reply personally, as
-                soon as we can.
+              <p class="max-w-[60ch] text-[15px] text-ink-soft">
+                Three short steps. This is an enquiry, not a booking: nothing is confirmed or paid until we've agreed
+                the details with you. We reply personally, as soon as we can.
               </p>
-              <div id="availability-cal" class="grid gap-5 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
-                <p class="text-[14px] text-ink-soft sm:col-span-2">
-                  The live calendar loads here; if it doesn't, just send the enquiry and we'll confirm availability by
-                  email.
-                </p>
-              </div>
-              <p id="cal-legend" hidden class="text-[12.5px] text-ink-soft">Struck-through days are unavailable; outlined days are the span your chosen hire would cover.</p>
-              <div class="flex flex-wrap gap-3 text-[14.5px]">
-                <span>Prefer to talk? <a class="font-semibold text-ink" href="mailto:bookings@sparklecarpets.im">bookings@sparklecarpets.im</a></span>
-                <a data-whatsapp hidden class="font-semibold text-chambray-deep no-underline" href="#" rel="noopener">Message us on WhatsApp</a>
-              </div>
             </div>
 
-            <form id="enquiry-form" class="grid content-start gap-3.5" novalidate>
-              <div class="grid gap-3.5 sm:grid-cols-2">
-                <label class="field">Your name
-                  <input name="name" required autocomplete="name" maxlength="100" />
-                </label>
-                <label class="field">Phone
-                  <input name="phone" type="tel" required autocomplete="tel" maxlength="40" />
-                </label>
-              </div>
-              <label class="field">Email
-                <input name="email" type="email" required autocomplete="email" maxlength="200" />
-              </label>
-              <div class="grid gap-3.5 sm:grid-cols-2">
-                <label class="field">Preferred start date
-                  <input id="enq-start" name="preferred_start" type="date" required />
-                  <span id="enq-span" class="text-[12.5px] font-normal text-ink-soft"></span>
-                </label>
-                <label class="field">Hire length
-                  <select id="enq-plan" name="rate_plan_code" required>
-                    <option value="24h">24-hour hire</option>
-                    <option value="48h" selected>48-hour hire</option>
-                    <option value="weekend">Weekend hire</option>
-                    <option value="3day">3-day hire</option>
-                    <option value="week">Weekly hire</option>
-                  </select>
-                </label>
-              </div>
-              <label class="field">Collection or delivery
-                <select id="enq-fulfilment" name="fulfilment">
-                  <option value="self" selected>I'll collect and return it myself (free, Castletown)</option>
-                  <option value="deliver_only">Deliver it to me; I'll return it (one journey)</option>
-                  <option value="collect_only">I'll collect it; you fetch it back (one journey)</option>
-                  <option value="both">Deliver and collect it (both journeys)</option>
-                </select>
-              </label>
-              <div id="enq-delivery-fields" hidden class="grid gap-3.5">
-                <label class="field">Your area
-                  <select id="enq-area" name="area">
-                    <option value="Castletown">Castletown</option>
-                    <option value="Ballasalla, Derbyhaven">Ballasalla, Derbyhaven</option>
-                    <option value="Port Erin, Port St Mary, Colby">Port Erin, Port St Mary, Colby</option>
-                    <option value="Ballabeg, Santon">Ballabeg, Santon</option>
-                    <option value="Douglas, Braddan, Onchan">Douglas, Braddan, Onchan</option>
-                    <option value="Peel, St John's, Laxey">Peel, St John's, Laxey</option>
-                    <option value="Kirk Michael, Sulby, Ballaugh">Kirk Michael, Sulby, Ballaugh</option>
-                    <option value="Ramsey, Andreas, Jurby">Ramsey, Andreas, Jurby</option>
-                    <option value="__other">Other location — request a quote</option>
-                  </select>
-                </label>
-                <label id="enq-other-wrap" hidden class="field">Your town or area
-                  <input id="enq-other" maxlength="100" placeholder="e.g. Maughold" />
-                </label>
-                <label class="field">Delivery address
-                  <input name="address" autocomplete="street-address" maxlength="300" />
-                </label>
-              </div>
-              <fieldset class="m-0 grid gap-2 border-0 p-0">
-                <legend class="mb-0.5 text-[14px] font-semibold">Optional extras</legend>
-                <label class="flex items-center gap-2.5 text-[14.5px]"><input type="checkbox" name="extras" value="solution" class="h-4 w-4 shrink-0 accent-[var(--color-chambray-deep)]" /><span>Additional detergent portion (<span data-price-addon="solution">£5</span>)</span></label>
-              </fieldset>
-              <label class="field">Anything else? <span class="font-normal text-ink-soft">(optional)</span>
-                <textarea name="message" rows="3" maxlength="1000"></textarea>
-              </label>
-              <div id="estimate" hidden class="grid gap-1.5 rounded-xl border border-line bg-card px-4 py-3.5 text-[14px]" aria-live="polite">
-                <p class="text-[12px] font-bold uppercase tracking-[0.06em] text-ink-soft">Your estimate</p>
-                <div class="flex items-baseline gap-3"><span id="est-hire-label">Hire</span><span class="menu-leader"></span><span id="est-hire" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
-                <div id="est-extras" class="grid gap-1.5 empty:hidden"></div>
-                <div id="est-transport-row" hidden class="flex items-baseline gap-3"><span id="est-transport-label">Delivery &amp; collection</span><span class="menu-leader"></span><span id="est-transport" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
-                <div class="flex items-baseline gap-3 rounded-lg bg-rec px-2.5 py-1.5 text-chambray-deep"><span class="font-semibold">Refundable security deposit</span><span class="menu-leader"></span><span id="est-deposit" class="shrink-0 text-right font-bold tabular-nums"></span></div>
-                <div class="flex items-baseline gap-3 border-t-2 border-line pt-2"><span class="text-[15px] font-bold">Total due at handover</span><span class="menu-leader"></span><span id="est-due" class="shrink-0 text-right text-[15px] font-bold tabular-nums"></span></div>
-                <div class="flex items-baseline gap-3 text-ink-soft"><span>Effective hire cost after deposit refund</span><span class="menu-leader"></span><span id="est-eff" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
-                <p id="est-conflict" hidden class="font-semibold text-[#9c4038]">Those dates clash with an existing booking. Please pick different dates on the calendar.</p>
-                <p class="text-[12px] text-ink-soft">Estimate only; final figures are confirmed with you. Nothing is paid online.</p>
-              </div>
-              <input name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
-              <div id="turnstile-slot"></div>
-              <label class="flex items-start gap-2.5 text-[13.5px]">
-                <input type="checkbox" name="terms_acknowledged" required class="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-chambray-deep)]" />
-                <span>I confirm that I have read the proposed <a href="/terms/" class="font-semibold text-ink">Equipment Hire Terms &amp; Conditions</a>.</span>
-              </label>
-              <p class="text-[12.5px] text-ink-soft">
-                Submitting an enquiry does not create a confirmed booking or an obligation to pay. Hire arrangements and applicable terms will be confirmed with you before your booking is accepted.
-              </p>
-              <p class="text-[12.5px] text-ink-soft">
-                By sending an enquiry you agree to us using these details to respond, as described in our
-                <a href="/privacy/" class="text-ink">privacy notice</a>.
-              </p>
-              <p id="enquiry-error" hidden role="alert" class="enq-err"></p>
-              <button type="submit" class="btn justify-self-start">Send enquiry</button>
-            </form>
-            <p id="enquiry-result" hidden role="status" tabindex="-1" class="md:col-span-2"></p>
+            <!-- Block layout below lg so the sticky estimate can follow the whole form (a grid row would trap it). -->
+            <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-10">
+              <!-- Estimate: one element. Phones/tablets: compact, sticky, expandable.
+                   Desktop: opened by script and shown as a card beside the steps. -->
+              <aside class="sticky top-[66px] z-20 mb-6 lg:order-2 lg:top-24 lg:mb-0" aria-label="Price estimate">
+                <details id="estimate" hidden class="est-card" aria-live="polite">
+                  <summary class="est-summary">
+                    <span class="font-semibold">Estimate</span>
+                    <span class="ml-auto text-right"><span id="est-summary-total" class="font-bold tabular-nums"></span><span class="text-[12.5px] text-ink-soft max-[359px]:hidden"> due at handover</span></span>
+                    <svg class="est-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </summary>
+                  <div class="est-body">
+                    <div class="flex items-baseline gap-3"><span id="est-hire-label">Hire</span><span class="menu-leader"></span><span id="est-hire" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
+                    <div id="est-extras" class="grid gap-1.5 empty:hidden"></div>
+                    <div id="est-transport-row" hidden class="flex items-baseline gap-3"><span id="est-transport-label">Delivery &amp; collection</span><span class="menu-leader"></span><span id="est-transport" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
+                    <div class="flex items-baseline gap-3 rounded-lg bg-rec px-2.5 py-1.5 text-chambray-deep"><span class="font-semibold">Refundable security deposit</span><span class="menu-leader"></span><span id="est-deposit" class="shrink-0 text-right font-bold tabular-nums"></span></div>
+                    <div class="flex items-baseline gap-3 border-t-2 border-line pt-2"><span class="text-[15px] font-bold">Total due at handover</span><span class="menu-leader"></span><span id="est-due" class="shrink-0 text-right text-[15px] font-bold tabular-nums"></span></div>
+                    <div class="flex items-baseline gap-3 text-ink-soft"><span>Effective hire cost after deposit refund</span><span class="menu-leader"></span><span id="est-eff" class="shrink-0 text-right font-semibold tabular-nums"></span></div>
+                    <p id="est-dates" class="text-[13px] text-ink-soft empty:hidden"></p>
+                    <p class="text-[12px] text-ink-soft">Estimate only; final figures are confirmed with you. Nothing is paid online.</p>
+                  </div>
+                </details>
+              </aside>
+
+              <form id="enquiry-form" class="grid min-w-0 content-start gap-5 lg:order-1" novalidate>
+                <ol class="steps" aria-label="Enquiry steps">
+                  <li><button type="button" class="step-tab" data-goto="1" aria-current="step"><span class="step-num">1</span><span class="sm:hidden">Dates</span><span class="hidden sm:inline">Dates &amp; package</span></button></li>
+                  <li><button type="button" class="step-tab" data-goto="2" disabled><span class="step-num">2</span><span class="sm:hidden">Delivery</span><span class="hidden sm:inline">Collection or delivery</span></button></li>
+                  <li><button type="button" class="step-tab" data-goto="3" disabled><span class="step-num">3</span><span class="sm:hidden">Details</span><span class="hidden sm:inline">Your details</span></button></li>
+                </ol>
+
+                <section data-step="1" class="step-panel" aria-labelledby="step1-title">
+                  <h3 id="step1-title" tabindex="-1" class="step-title">1. Dates &amp; hire package</h3>
+                  <label class="field">Hire length
+                    <select id="enq-plan" name="rate_plan_code" required>
+                      <option value="24h">24-hour hire</option>
+                      <option value="48h" selected>48-hour hire</option>
+                      <option value="weekend">Weekend hire</option>
+                      <option value="3day">3-day hire</option>
+                      <option value="week">Weekly hire</option>
+                    </select>
+                  </label>
+                  <div class="grid gap-2">
+                    <p class="text-[14px] font-semibold">Start date</p>
+                    <div id="availability-cal" class="grid gap-5 lg:grid-cols-2">
+                      <p class="text-[14px] text-ink-soft lg:col-span-2">
+                        The live calendar loads here; if it doesn't, choose a date below and we'll confirm availability
+                        by email.
+                      </p>
+                    </div>
+                    <p id="cal-legend" hidden class="text-[12.5px] text-ink-soft">Tap a start date. Struck-through days are unavailable; outlined days show the span your hire would cover.</p>
+                    <!-- Typed date: shown only if the calendar can't load, so there is always a way to choose a date. -->
+                    <label id="enq-date-fallback" class="field">Preferred start date
+                      <input id="enq-start" name="preferred_start" type="date" required />
+                    </label>
+                    <p id="enq-span" class="text-[14px] font-semibold empty:hidden" aria-live="polite"></p>
+                    <p id="est-conflict" hidden class="text-[14px] font-semibold text-[#9c4038]">Those dates clash with an existing booking. Please pick different dates on the calendar.</p>
+                  </div>
+                  <fieldset class="m-0 grid gap-2 border-0 p-0">
+                    <legend class="mb-0.5 text-[14px] font-semibold">Optional extras</legend>
+                    <label class="flex min-h-6 items-center gap-2.5 text-[14.5px]"><input type="checkbox" name="extras" value="solution" class="h-4 w-4 shrink-0 accent-[var(--color-chambray-deep)]" /><span>Additional detergent portion (<span data-price-addon="solution">£5</span>)</span></label>
+                  </fieldset>
+                  <p class="step-error enq-err" hidden role="alert"></p>
+                  <div class="step-nav"><button type="button" class="btn" data-next>Continue</button></div>
+                </section>
+
+                <section data-step="2" class="step-panel" aria-labelledby="step2-title" hidden>
+                  <h3 id="step2-title" tabindex="-1" class="step-title">2. Collection or delivery</h3>
+                  <label class="field">How would you like the machine?
+                    <select id="enq-fulfilment" name="fulfilment">
+                      <option value="self" selected>I'll collect and return it myself (free, Castletown)</option>
+                      <option value="deliver_only">Deliver it to me; I'll return it (one journey)</option>
+                      <option value="collect_only">I'll collect it; you fetch it back (one journey)</option>
+                      <option value="both">Deliver and collect it (both journeys)</option>
+                    </select>
+                  </label>
+                  <div id="enq-delivery-fields" hidden class="grid gap-3.5">
+                    <label class="field">Your area
+                      <select id="enq-area" name="area">
+                        <option value="Castletown">Castletown</option>
+                        <option value="Ballasalla, Derbyhaven">Ballasalla, Derbyhaven</option>
+                        <option value="Port Erin, Port St Mary, Colby">Port Erin, Port St Mary, Colby</option>
+                        <option value="Ballabeg, Santon">Ballabeg, Santon</option>
+                        <option value="Douglas, Braddan, Onchan">Douglas, Braddan, Onchan</option>
+                        <option value="Peel, St John's, Laxey">Peel, St John's, Laxey</option>
+                        <option value="Kirk Michael, Sulby, Ballaugh">Kirk Michael, Sulby, Ballaugh</option>
+                        <option value="Ramsey, Andreas, Jurby">Ramsey, Andreas, Jurby</option>
+                        <option value="__other">Other location — request a quote</option>
+                      </select>
+                    </label>
+                    <label id="enq-other-wrap" hidden class="field">Your town or area
+                      <input id="enq-other" maxlength="100" placeholder="e.g. Maughold" />
+                    </label>
+                    <label class="field">Delivery address
+                      <input name="address" autocomplete="street-address" maxlength="300" />
+                    </label>
+                  </div>
+                  <p class="text-[13px] text-ink-soft">Exact collection and return times are agreed with you when we confirm.</p>
+                  <p class="step-error enq-err" hidden role="alert"></p>
+                  <div class="step-nav"><button type="button" class="btn btn-ghost" data-back>Back</button><button type="button" class="btn" data-next>Continue</button></div>
+                </section>
+
+                <section data-step="3" class="step-panel" aria-labelledby="step3-title" hidden>
+                  <h3 id="step3-title" tabindex="-1" class="step-title">3. Your details</h3>
+                  <div class="grid gap-3.5 sm:grid-cols-2">
+                    <label class="field">Your name
+                      <input name="name" required autocomplete="name" maxlength="100" />
+                    </label>
+                    <label class="field">Phone
+                      <input name="phone" type="tel" required autocomplete="tel" maxlength="40" />
+                    </label>
+                  </div>
+                  <label class="field">Email
+                    <input name="email" type="email" required autocomplete="email" maxlength="200" />
+                  </label>
+                  <label class="field">Anything else? <span class="font-normal text-ink-soft">(optional)</span>
+                    <textarea name="message" rows="3" maxlength="1000"></textarea>
+                  </label>
+                  <input name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+                  <div id="turnstile-slot"></div>
+                  <label class="flex min-h-6 items-start gap-2.5 py-0.5 text-[13.5px]">
+                    <input type="checkbox" name="terms_acknowledged" required class="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-chambray-deep)]" />
+                    <span>I confirm that I have read the proposed <a href="/terms/" class="font-semibold text-ink">Equipment Hire Terms &amp; Conditions</a>.</span>
+                  </label>
+                  <p class="text-[12.5px] text-ink-soft">
+                    Submitting an enquiry does not create a confirmed booking or an obligation to pay. Hire arrangements and applicable terms will be confirmed with you before your booking is accepted.
+                  </p>
+                  <p class="text-[12.5px] text-ink-soft">
+                    By sending an enquiry you agree to us using these details to respond, as described in our
+                    <a href="/privacy/" class="text-ink">privacy notice</a>.
+                  </p>
+                  <p id="enquiry-error" hidden role="alert" class="enq-err"></p>
+                  <div class="step-nav"><button type="button" class="btn btn-ghost" data-back>Back</button><button type="submit" class="btn">Send enquiry</button></div>
+                </section>
+              </form>
+            </div>
+
+            <p id="enquiry-result" hidden role="status" tabindex="-1" class="mt-6"></p>
+            <div class="mt-6 flex flex-wrap gap-3 text-[14.5px]">
+              <span>Prefer to talk? <a class="font-semibold text-ink" href="mailto:bookings@sparklecarpets.im">bookings@sparklecarpets.im</a></span>
+              <a data-whatsapp hidden class="font-semibold text-chambray-deep no-underline" href="#" rel="noopener">Message us on WhatsApp</a>
+            </div>
           </div>
         </div>
       </section>
