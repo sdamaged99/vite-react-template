@@ -55,7 +55,7 @@ interface Zone {
 }
 interface PricingPayload {
   rates: Rate[];
-  addons: { code: string; price_pence: number }[];
+  addons: { code: string; label: string; price_pence: number }[];
   delivery_zones: Zone[];
   settings: Record<string, string>;
 }
@@ -63,6 +63,7 @@ interface PricingPayload {
 let pricing: PricingPayload | null = null;
 let busy: { start_date: string; end_date: string }[] = [];
 let dateClash = false;
+let weekendNotFriday = false;
 const isBusy = (iso: string) => busy.some((r) => iso >= r.start_date && iso <= r.end_date);
 const todayIso = () => todayIoM();
 
@@ -100,9 +101,12 @@ function updateEstimate() {
   const zone =
     journeys > 0 && !otherChosen ? (pricing?.delivery_zones.find((z) => z.areas === areaSelect?.value) ?? null) : null;
   const transport = journeys === 0 ? 0 : otherChosen ? null : transportPence(f, zone);
-  const extrasPence = Array.from(
+  const chosenExtras = Array.from(
     document.querySelectorAll<HTMLInputElement>('#enquiry-form input[name="extras"]:checked'),
-  ).map((el) => pricing?.addons.find((a) => a.code === el.value)?.price_pence ?? 0);
+  )
+    .map((el) => pricing?.addons.find((a) => a.code === el.value))
+    .filter((a): a is PricingPayload["addons"][number] => !!a);
+  const extrasPence = chosenExtras.map((a) => a.price_pence);
   const est = computeEstimate({ hirePence: rate.price_pence, transportPence: transport, extrasPence, depositPence: deposit });
 
   const set = (id: string, text: string) => {
@@ -111,27 +115,58 @@ function updateEstimate() {
   };
   set("est-hire-label", rate.label);
   set("est-hire", gbp(est.hirePence));
-  const extrasRow = document.getElementById("est-extras-row");
-  if (extrasRow) extrasRow.hidden = est.extrasPence === 0;
-  set("est-extras", gbp(est.extrasPence));
+  const extrasBox = document.getElementById("est-extras");
+  if (extrasBox) {
+    extrasBox.replaceChildren(
+      ...chosenExtras.map((a) => {
+        const row = document.createElement("div");
+        row.className = "flex items-baseline gap-3";
+        const label = document.createElement("span");
+        label.textContent = a.label;
+        const leader = document.createElement("span");
+        leader.className = "menu-leader";
+        const value = document.createElement("span");
+        value.className = "shrink-0 text-right font-semibold tabular-nums";
+        value.textContent = gbp(a.price_pence);
+        row.append(label, leader, value);
+        return row;
+      }),
+    );
+  }
   const transportRow = document.getElementById("est-transport-row");
   if (transportRow) transportRow.hidden = journeys === 0;
   set(
     "est-transport-label",
     f === "deliver_only" ? "Delivery (one journey)" : f === "collect_only" ? "Collection (one journey)" : "Delivery & collection (both journeys)",
   );
-  set("est-transport", est.transportQuoted ? "Quoted individually" : gbp(est.transportPence ?? 0));
+  set("est-transport", est.transportQuoted ? "To be quoted" : gbp(est.transportPence ?? 0));
   set("est-deposit", gbp(est.depositPence));
-  set("est-due", est.dueAtHandoverPence === null ? "Confirmed with your quote" : gbp(est.dueAtHandoverPence));
-  set("est-eff", est.effectivePence === null ? "Confirmed with your quote" : gbp(est.effectivePence));
+  set("est-due", est.dueAtHandoverPence === null ? "To be quoted" : gbp(est.dueAtHandoverPence));
+  set("est-eff", est.effectivePence === null ? "To be quoted" : gbp(est.effectivePence));
   box.hidden = false;
+}
+
+function setSubmitBlocked(blocked: boolean) {
+  const submit = document.querySelector<HTMLButtonElement>("#enquiry-form button[type=submit]");
+  if (submit) submit.disabled = blocked;
 }
 
 function updateSpanNote() {
   if (!spanNote || !planSelect) return;
   const start = startInput?.value ?? "";
+  dateClash = false;
+  weekendNotFriday = false;
+  const conflictEl = document.getElementById("est-conflict");
+  if (conflictEl) conflictEl.hidden = true;
+  setSubmitBlocked(false);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) {
     spanNote.textContent = planSelect.value === "weekend" ? "Weekend hires run Friday to Monday morning." : "";
+    return;
+  }
+  if (planSelect.value === "weekend" && !isFriday(start)) {
+    weekendNotFriday = true;
+    spanNote.textContent = "Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length.";
+    setSubmitBlocked(true);
     return;
   }
   const days = covered(start, planSelect.value);
@@ -141,10 +176,8 @@ function updateSpanNote() {
   if (planSelect.value === "weekend") text += " Collect Friday, return Monday morning.";
   spanNote.textContent = text;
   dateClash = clash;
-  const conflictEl = document.getElementById("est-conflict");
   if (conflictEl) conflictEl.hidden = !clash;
-  const submit = document.querySelector<HTMLButtonElement>("#enquiry-form button[type=submit]");
-  if (submit) submit.disabled = clash;
+  setSubmitBlocked(clash);
 }
 
 function repaintCalendar() {
@@ -185,10 +218,10 @@ async function renderCalendar() {
   } catch {
     return; // leave the explanatory text in place
   }
-  const today = new Date();
+  const [iomYear, iomMonth] = todayIso().split("-").map(Number) as [number, number];
   const months: HTMLElement[] = [];
   for (let m = 0; m < 2; m++) {
-    const first = new Date(today.getFullYear(), today.getMonth() + m, 1);
+    const first = new Date(iomYear, iomMonth - 1 + m, 1);
     const wrap = document.createElement("div");
     wrap.className = "cal-month";
     const title = document.createElement("div");
@@ -282,6 +315,10 @@ async function hydrate() {
       planSelect.value = pricing.rates.some((r) => r.code === current) ? current : "48h";
     }
     if (areaSelect && pricing.delivery_zones.length > 0) {
+      const current = areaSelect.value;
+      // Keep the static "Other location — request a quote" option: places
+      // outside the zones are quoted individually, never dropped.
+      const other = areaSelect.querySelector<HTMLOptionElement>('option[value="__other"]');
       areaSelect.replaceChildren(
         ...pricing.delivery_zones.map((z) => {
           const o = document.createElement("option");
@@ -289,7 +326,9 @@ async function hydrate() {
           o.textContent = `${z.areas} — ${gbp(z.both_pence)} both ways`;
           return o;
         }),
+        ...(other ? [other] : []),
       );
+      if ([...areaSelect.options].some((o) => o.value === current)) areaSelect.value = current;
     }
 
     const wa = (pricing.settings["whatsapp_number"] ?? "").replace(/\D/g, "");
@@ -346,14 +385,28 @@ if (form) {
   }
 
   const result = document.getElementById("enquiry-result");
+  const errorEl = document.getElementById("enquiry-error");
   const submitBtn = form.querySelector("button[type=submit]") as HTMLButtonElement | null;
+  const showError = (msg: string) => {
+    if (!errorEl) return;
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+  };
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!result) return;
+    if (errorEl) errorEl.hidden = true;
+    // Native constraint checks (required, email, min date), shown on the field itself.
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
     if (dateClash) {
-      result.textContent = "Those dates are unavailable; please pick different dates on the calendar.";
-      result.className = "enq-err";
-      result.hidden = false;
+      showError("Those dates are unavailable; please pick different dates on the calendar.");
+      return;
+    }
+    if (weekendNotFriday) {
+      showError("Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length.");
       return;
     }
     result.hidden = true;
@@ -393,16 +446,14 @@ if (form) {
             ? "Your enquiry has been saved, but our email notification failed, so we may not see it straight away. If you haven't heard from us within two days, please email bookings@sparklecarpets.im directly, quoting your name and dates."
             : "Thanks — your enquiry is on its way. We'll check availability and reply personally, as soon as we can. Nothing is booked or paid until we've confirmed with you.";
         result.className = data.emailed === false ? "enq-err" : "enq-ok";
+        result.hidden = false;
+        result.focus();
       } else {
-        result.textContent =
-          data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.";
-        result.className = "enq-err";
+        showError(data.error ?? "Something went wrong sending that; please email bookings@sparklecarpets.im instead.");
       }
     } catch {
-      result.textContent = "We couldn't send that just now; please email bookings@sparklecarpets.im instead.";
-      result.className = "enq-err";
+      showError("We couldn't send that just now; please email bookings@sparklecarpets.im instead.");
     }
-    result.hidden = false;
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = "Send enquiry";

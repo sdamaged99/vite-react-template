@@ -255,7 +255,9 @@ async function loadEnquiries() {
       detail.textContent = `${q.rate_plan_code} from ${fmt(q.preferred_start)} · ${q.fulfilment}${
         q.area ? `: ${q.area}` : ""
       }${q.address ? `, ${q.address}` : ""} · ${q.phone}${extras ? ` · extras: ${extras}` : ""}${
-        q.estimate_total_pence != null ? ` · est. due £${(q.estimate_total_pence / 100).toFixed(0)} incl. deposit` : ""
+        q.estimate_total_pence != null
+          ? ` · est. due £${(q.estimate_total_pence / 100).toFixed(q.estimate_total_pence % 100 ? 2 : 0)} incl. deposit`
+          : " · transport to be quoted"
       }`;
       card.append(detail);
       const termsLine = document.createElement("p");

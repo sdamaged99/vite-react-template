@@ -22,6 +22,18 @@ All mail goes through the business's own NethServer: the Worker submits enquiry 
 - Review `audit_log` and Worker observability for anomalies when touching the app.
 - Amanda-facing issues (booking stuck, wrong price): fix data via the admin dashboard, never direct SQL in production unless the dashboard cannot, and record what changed.
 
+## Data retention (manual, at least quarterly)
+
+The privacy notice promises: enquiries that don't become bookings are deleted within 12 months; confirmed-hire records are kept 6 years, then deleted. **Nothing deletes data automatically**, so run this in the D1 Console (order matters: diary rows reference enquiries):
+
+```sql
+DELETE FROM enquiries WHERE status <> 'confirmed' AND created_at < datetime('now', '-12 months');
+DELETE FROM diary WHERE kind = 'booking' AND end_date < date('now', '-6 years');
+DELETE FROM enquiries WHERE status = 'confirmed' AND created_at < datetime('now', '-6 years') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
+```
+
+D1 Time Travel keeps point-in-time history for 30 days, so deleted rows disappear from recovery after that. The same periods apply to enquiry emails in the bookings mailbox and to WhatsApp chats: delete those by hand on the same schedule.
+
 ## Troubleshooting
 
 | Symptom | First checks |
