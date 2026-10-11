@@ -97,3 +97,5 @@ export class Hono<_T = unknown> {
   };
 }
 export type MiddlewareHandler<_T = unknown> = Handler;
+
+export type Context<_T = unknown> = any;

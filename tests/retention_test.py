@@ -39,8 +39,10 @@ enq("new_11m", "new", "-11 months")          # delete
 enq("declined_13m", "declined", "-13 months")  # delete
 enq("replied_2y", "replied", "-2 years")       # delete
 # Confirmed hires
-h1 = enq("hire_5y", "confirmed", "-5 years"); diary(h1, "hire_5y", "-5 years")               # keep
-h2 = enq("hire_7y", "confirmed", "-7 years"); diary(h2, "hire_7y", "-7 years")               # delete both
+h1 = enq("hire_5y", "confirmed", "-5 years"); d1 = diary(h1, "hire_5y", "-5 years")          # keep
+db.execute("INSERT INTO deposit_entries (diary_id, kind, amount_pence) VALUES (?, 'taken', 7500)", (d1,))
+h2 = enq("hire_7y", "confirmed", "-7 years"); d2 = diary(h2, "hire_7y", "-7 years")          # delete both
+db.execute("INSERT INTO deposit_entries (diary_id, kind, amount_pence) VALUES (?, 'taken', 7500)", (d2,))  # ledger rows go too
 h3 = enq("hire_6y_ended_5y", "confirmed", "-6 years", ) ; diary(h3, "hire_6y_ended_5y", "-5 years")  # keep: hire ended < 6y ago
 h4 = enq("confirmed_no_diary_7y", "confirmed", "-7 years")    # diary removed by hand: delete
 # Edge: confirmed then marked closed (API allows it) and still in the diary
@@ -64,6 +66,9 @@ checks = [
     ("audit entries for deleted records removed (no stray customer emails)",
      not any(n in d for d in audit_left for n in ["new_11m", "declined_13m", "replied_2y", "hire_7y", "confirmed_no_diary_7y"])),
     ("audit entries for kept records retained", any("new_9m" in d for d in audit_left)),
+    ("deposit ledger of deleted hires removed, kept hires' ledger retained",
+     [r[0] for r in db.execute("SELECT d.name FROM deposit_entries e JOIN diary d ON d.id = e.diary_id")] == ["hire_5y"]
+     and db.execute("SELECT COUNT(*) FROM deposit_entries").fetchone()[0] == 1),
 ]
 fails = 0
 for name, ok in checks:

@@ -28,6 +28,7 @@ The privacy notice publishes no fixed periods: it says information is kept only 
 
 ```sql
 DELETE FROM enquiries WHERE status <> 'confirmed' AND created_at < datetime('now', '-10 months') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
+DELETE FROM deposit_entries WHERE diary_id IN (SELECT id FROM diary WHERE end_date < date('now', '-6 years'));
 DELETE FROM diary WHERE end_date < date('now', '-6 years');
 DELETE FROM enquiries WHERE created_at < datetime('now', '-6 years') AND id NOT IN (SELECT enquiry_id FROM diary WHERE enquiry_id IS NOT NULL);
 DELETE FROM audit_log WHERE created_at < datetime('now', '-6 years') OR (entity = 'enquiry' AND entity_id NOT IN (SELECT id FROM enquiries)) OR (entity = 'diary' AND entity_id NOT IN (SELECT id FROM diary));

@@ -23,6 +23,10 @@ SHOTS = os.environ.get("SHOT_DIR", "shots")
 FONTS = os.environ.get("FONT_DIR", "")
 os.makedirs(SHOTS, exist_ok=True)
 
+import socket as _socket
+with _socket.socket() as _s:
+    if _s.connect_ex(("127.0.0.1", PORT)) == 0:
+        sys.exit(f"port {PORT} is already in use (a stale test server?); stop it and rerun")
 server = subprocess.Popen(
     ["node", "--experimental-transform-types", "--no-warnings", "--import", "./tests/harness/register.mjs", "tests/harness/server.ts", str(PORT)],
     stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, env=os.environ.copy(),
@@ -51,6 +55,7 @@ def post_enquiry(**kw):
 today = dt.date.today()
 sql("INSERT INTO diary (start_date, end_date, kind, name) VALUES (?, ?, 'booking', 'Existing hire')",
     [(today + dt.timedelta(days=9)).isoformat(), (today + dt.timedelta(days=11)).isoformat()])
+sql("INSERT INTO diary (start_date, end_date, kind, name) VALUES (?, ?, 'booking', 'Going Out Today')", [today.isoformat(), (today + dt.timedelta(days=1)).isoformat()])
 post_enquiry(name="Alice Example", preferred_start=(today + dt.timedelta(days=20)).isoformat(), fulfilment="deliver_only",
              area="Ballasalla, Derbyhaven", address="1 Main Road", extras=["solution"], message="Ground floor flat, lift available.")
 post_enquiry(name="Bob Example", preferred_start=(today + dt.timedelta(days=30)).isoformat())

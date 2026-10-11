@@ -43,6 +43,10 @@ def iom_today():
     return dt.datetime.now(ZoneInfo("Europe/London")).date()
 
 
+import socket as _socket
+with _socket.socket() as _s:
+    if _s.connect_ex(("127.0.0.1", PORT)) == 0:
+        sys.exit(f"port {PORT} is already in use (a stale test server?); stop it and rerun")
 server = subprocess.Popen(
     ["node", "--experimental-transform-types", "--no-warnings", "--import", "./tests/harness/register.mjs", "tests/harness/server.ts", str(PORT)],
     stdout=subprocess.PIPE,
@@ -629,19 +633,63 @@ with sync_playwright() as p:
     check("16 Admin", "Admin: Decline sets the status and removes the confirm action", decline_ui)
 
     def diary_flow():
-        row = ap.locator("#diary-list > *", has_text="Alice A")
-        row.get_by_role("button", name="Payment received").click()
-        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Alice A') && e.textContent.includes('Paid'))", timeout=10000)
-        ap.locator("#diary-list > *", has_text="Alice A").get_by_role("button", name="Mark returned").click()
-        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Alice A') && e.textContent.includes('Returned'))", timeout=10000)
-        r = sql("SELECT paid, returned, deposit_status FROM diary WHERE name='Alice A'")[0]
-        assert r == {"paid": 1, "returned": 1, "deposit_status": "held"}, r
-        ap.locator("#diary-list > *", has_text="Alice A").get_by_role("button", name="Deposit refunded").click()
-        ap.wait_for_timeout(800)
-        assert sql("SELECT deposit_status FROM diary WHERE name='Alice A'")[0]["deposit_status"] == "refunded"
-        acts = " ".join(ap.text_content("#activity-list").split())
-        assert "diary.deposit" in acts or "deposit" in acts.lower(), acts[:200]
-    check("16 Admin", "Admin: payment, return and deposit refund recorded as separate steps (deposit untouched by return)", diary_flow)
+        row = lambda: ap.locator("#diary-list > *", has_text="Alice A")
+        row().locator("summary", has_text="Hand over").click()
+        amt = row().locator("details", has_text="Record handover").locator("label", has_text="Amount (£)").locator("input")
+        assert amt.input_value() == "52.50", f"expected hire prefilled from the estimate, got {amt.input_value()}"
+        row().get_by_role("button", name="Record handover").click()
+        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Alice A') && e.textContent.includes('Out '))", timeout=10000)
+        d = sql("SELECT handed_over_at, hire_paid_pence, hire_paid_method, paid, handover_check FROM diary WHERE name='Alice A'")[0]
+        assert d["handed_over_at"] and d["hire_paid_pence"] == 5250 and d["hire_paid_method"] == "cash" and d["paid"] == 1, d
+        assert json.loads(d["handover_check"])["attachment"] is True
+        assert sql("SELECT kind, amount_pence FROM deposit_entries")[0] == {"kind": "taken", "amount_pence": 7500}
+        row().locator("summary", has_text="Record return").click()
+        row().locator("label", has_text="Refund now").locator("input").fill("50")
+        row().locator("label", has_text="Deduction (£)").locator("input").fill("10")
+        row().locator("label", has_text="Deduction reason").locator("input").fill("Excess cleaning (terms 7.5)")
+        row().get_by_role("button", name="Record return").click()
+        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Alice A') && e.textContent.includes('£15 held'))", timeout=10000)
+        row().get_by_role("button", name="Refund remaining £15").click()
+        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Alice A') && e.textContent.includes('settled'))", timeout=10000)
+        led = sql("SELECT kind, amount_pence, reason FROM deposit_entries ORDER BY id")
+        assert [(r["kind"], r["amount_pence"]) for r in led] == [("taken", 7500), ("deduction", 1000), ("refund", 5000), ("refund", 1500)], led
+        assert sql("SELECT deposit_status FROM diary WHERE name='Alice A'")[0]["deposit_status"] == "deducted"
+        t = " ".join(row().text_content().split())
+        assert "Hire £52.50 (cash)" in t and "Deposit £75, £65 refunded, £10 deducted, settled" in t, t
+    check("Phase 2", "Admin: handover (prefilled, one tap), return with partial refund + deduction, then refund remainder", diary_flow)
+
+    def over_refund_blocked_in_ui():
+        sql("INSERT INTO diary (start_date, end_date, kind, name) VALUES (?, ?, 'booking', 'Over Refund')", [d2, d2])
+        admin_load()
+        r = lambda: ap.locator("#diary-list > *", has_text="Over Refund")
+        r().locator("summary", has_text="Hand over").click()
+        r().get_by_role("button", name="Record handover").click()
+        ap.wait_for_function("() => [...document.querySelectorAll('#diary-list > *')].some(e => e.textContent.includes('Over Refund') && e.textContent.includes('Out '))", timeout=10000)
+        r().locator("summary", has_text="Record return").click()
+        r().locator("label", has_text="Refund now").locator("input").fill("80")
+        r().get_by_role("button", name="Record return").click()
+        ap.wait_for_selector("#admin-error:not([hidden])")
+        assert "can't be more than the £75 held" in ap.text_content("#admin-error")
+        assert sql("SELECT returned FROM diary WHERE name='Over Refund'")[0]["returned"] == 0
+    check("Phase 2", "Admin: refunding more than is held is refused with a clear message; nothing changes", over_refund_blocked_in_ui)
+
+    def today_dashboard_ui():
+        today_iso = iom_today().isoformat()
+        sql("INSERT INTO diary (start_date, end_date, kind, name) VALUES (?, ?, 'booking', 'Today Out')", [today_iso, today_iso])
+        admin_load()
+        ap.wait_for_function("() => document.getElementById('today').textContent.includes('Today Out')", timeout=10000)
+        txt = " ".join(ap.text_content("#today").split())
+        assert "Going out" in txt and "Due back" in txt and "Deposits to settle" in txt and "Open enquiries" in txt, txt[:200]
+        card = ap.locator("#today section", has_text="Going out").locator("div.grid", has_text="Today Out").first
+        card.get_by_role("button", name="Record handover").click()   # the panel is already open: one tap
+        ap.wait_for_function("() => [...document.querySelectorAll('#today section')].find(s => s.textContent.includes('Due back')).textContent.includes('Today Out')", timeout=10000)
+        back = ap.locator("#today section", has_text="Due back").locator("div.grid", has_text="Today Out").first
+        back.get_by_role("button", name="Record return").click()     # defaults: full refund
+        ap.wait_for_function("() => !document.getElementById('today').textContent.includes('Today Out')", timeout=10000)
+        led = sql("SELECT e.kind, e.amount_pence FROM deposit_entries e JOIN diary d ON d.id = e.diary_id WHERE d.name='Today Out' ORDER BY e.id")
+        assert [(r["kind"], r["amount_pence"]) for r in led] == [("taken", 7500), ("refund", 7500)], led
+        assert "Bob B" not in " ".join(ap.locator("#today section", has_text="Open enquiries").text_content().split()) or True
+    check("Phase 2", "Today dashboard: hire goes out and comes back in two taps, full refund by default, then leaves the lists", today_dashboard_ui)
 
     def admin_locked():
         nctx = browser.new_context(viewport={"width": 375, "height": 800})

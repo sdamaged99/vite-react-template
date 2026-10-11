@@ -498,19 +498,158 @@ await test("16 Admin", "Declined enquiry: status set, audited, never blocks the 
   assert.equal((await call("POST", "/api/enquiry", enquiry({ preferred_start: d }))).status, 200);
 });
 
-await test("16 Admin", "Return, payment and deposit are separate records; returned never touches the deposit", async () => {
-  const diaryId = (DB.raw.prepare("SELECT id FROM diary WHERE enquiry_id = ?").get(confirmId) as any).id;
-  const get = () => DB.raw.prepare("SELECT returned, paid, deposit_status FROM diary WHERE id = ?").get(diaryId) as any;
-  const before = get();
-  assert.equal((await admin("POST", `/diary/${diaryId}/paid`, { paid: true })).status, 200);
-  assert.equal((await admin("POST", `/diary/${diaryId}/deposit`, { status: "held" })).status, 200);
-  assert.equal((await admin("POST", `/diary/${diaryId}/returned`, { returned: true })).status, 200);
-  assert.deepEqual({ ...get() }, { returned: 1, paid: 1, deposit_status: "held" }, `before: ${JSON.stringify(before)}`);
-  assert.equal((await admin("POST", `/diary/${diaryId}/deposit`, { status: "refunded" })).status, 200);
-  assert.equal(get().deposit_status, "refunded");
-  assert.equal((await admin("POST", `/diary/${diaryId}/deposit`, { status: "lost" })).status, 400);
-  const acts = (await admin("GET", "/activity")).body.activity.map((x: any) => x.action);
-  for (const a of ["diary.paid", "diary.returned", "diary.deposit", "enquiry.confirm", "enquiry.status"]) assert.ok(acts.includes(a), a);
+const ALL_OK = { machine_ok: true, attachment: true, hose: true, accessories: true, detergent: true, photos: false };
+const drow = (id: number) => DB.raw.prepare("SELECT * FROM diary WHERE id = ?").get(id) as any;
+const ledger = (id: number) => (DB.raw.prepare("SELECT kind, amount_pence, reason FROM deposit_entries WHERE diary_id = ? ORDER BY id").all(id) as any[]).map((r) => ({ ...r }));
+async function newBooking(daysAhead: number, name = "Ledger Test") {
+  const r = await admin("POST", "/diary", { start_date: daysFromNow(daysAhead), end_date: daysFromNow(daysAhead + 1), kind: "booking", name });
+  return r.body.id as number;
+}
+
+await test("Phase 2", "Handover records checklist, hire payment (amount + method) and deposit taken, with times", async () => {
+  const id = await newBooking(150);
+  const r = await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, note: "Small scuff on handle", hire_paid_pence: 4500, hire_paid_method: "cash", deposit_pence: 7500 });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const d = drow(id);
+  assert.match(d.handed_over_at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+  const chk = JSON.parse(d.handover_check);
+  assert.equal(chk.attachment, true); assert.equal(chk.photos, false); assert.equal(chk.note, "Small scuff on handle");
+  assert.equal(d.paid, 1); assert.equal(d.hire_paid_pence, 4500); assert.equal(d.hire_paid_method, "cash"); assert.ok(d.hire_paid_at);
+  assert.deepEqual(ledger(id), [{ kind: "taken", amount_pence: 7500, reason: null }]);
+  assert.equal(d.deposit_status, "held");
+});
+
+await test("Phase 2", "Duplicate and out-of-order actions are refused (double handover, return before handover, double return)", async () => {
+  const id = await newBooking(155);
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK })).status, 409, "return before handover");
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 100 })).status, 409, "refund before return");
+  assert.equal((await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 })).status, 200);
+  assert.equal((await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 })).status, 409, "second handover");
+  assert.equal(ledger(id).length, 1, "deposit taken once only");
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK, refund_pence: 7500 })).status, 200);
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK, refund_pence: 7500 })).status, 409, "second return");
+  assert.equal(ledger(id).filter((e) => e.kind === "refund").length, 1, "refunded once only");
+  assert.equal(drow(id).deposit_status, "refunded");
+});
+
+await test("Phase 2", "Two devices recording the same handover at once: exactly one succeeds", async () => {
+  const id = await newBooking(160);
+  const [a, b] = await Promise.all([
+    admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500, hire_paid_pence: 4500, hire_paid_method: "bank" }),
+    admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500, hire_paid_pence: 4500, hire_paid_method: "bank" }),
+  ]);
+  assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+  assert.equal(ledger(id).length, 1);
+});
+
+await test("Phase 2", "Partial refunds and deductions: itemised, reasons required, never more than held", async () => {
+  const id = await newBooking(165);
+  await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK, deduction_pence: 1000 })).status, 400, "deduction without reason");
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK, deduction_pence: 5000, deduction_reason: "x", refund_pence: 5000 })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/return`, { checks: ALL_OK, deduction_pence: 5000, deduction_reason: "Cracked tank", refund_pence: 5000 })).status, 409, "over held");
+  assert.equal(drow(id).returned, 0, "refused return changed nothing");
+  const r = await admin("POST", `/diary/${id}/return`, { checks: { ...ALL_OK, machine_ok: false }, note: "Tank lid cracked", deduction_pence: 1000, deduction_reason: "Excess cleaning (terms 7.5)", refund_pence: 3000 });
+  assert.equal(r.status, 200); assert.equal(r.body.held_pence, 3500);
+  assert.equal(drow(id).deposit_status, "held", "still partly held");
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 4000 })).status, 409, "refund above held");
+  assert.equal((await admin("POST", `/diary/${id}/deposit/deduction`, { amount_pence: 500 })).status, 400, "deduction needs reason");
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 0 })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: -5 })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 12.5 })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 3500 })).status, 200);
+  assert.deepEqual(ledger(id).map((e) => [e.kind, e.amount_pence]), [["taken", 7500], ["deduction", 1000], ["refund", 3000], ["refund", 3500]]);
+  assert.equal(drow(id).deposit_status, "deducted", "fully settled with a deduction");
+  assert.equal((await admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 1 })).status, 409, "nothing left");
+  const g = await admin("GET", `/diary/${id}/deposit`);
+  assert.equal(g.body.entries.length, 4); assert.ok(g.body.entries.every((e: any) => e.created_at));
+});
+
+await test("Phase 2", "Two simultaneous full refunds: one succeeds, the other is refused", async () => {
+  const id = await newBooking(170);
+  await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  await admin("POST", `/diary/${id}/return`, { checks: ALL_OK });
+  const [a, b] = await Promise.all([
+    admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 7500 }),
+    admin("POST", `/diary/${id}/deposit/refund`, { amount_pence: 7500 }),
+  ]);
+  assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+  assert.equal(ledger(id).filter((e) => e.kind === "refund").length, 1);
+});
+
+await test("Phase 2", "Hire payment recorded separately (e.g. bank transfer first): once only, amount and method validated", async () => {
+  const id = await newBooking(175);
+  assert.equal((await admin("POST", `/diary/${id}/payment`, { amount_pence: 4500, method: "cheque" })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/payment`, { amount_pence: 0, method: "bank" })).status, 400);
+  assert.equal((await admin("POST", `/diary/${id}/payment`, { amount_pence: 4500, method: "bank" })).status, 200);
+  assert.equal((await admin("POST", `/diary/${id}/payment`, { amount_pence: 4500, method: "bank" })).status, 409);
+  assert.equal((await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, hire_paid_pence: 4500, hire_paid_method: "cash" })).status, 409, "would double-record income");
+  assert.equal((await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 })).status, 200);
+  const d = drow(id);
+  assert.equal(d.hire_paid_pence, 4500); assert.equal(d.hire_paid_method, "bank");
+  assert.equal(ledger(id)[0].amount_pence, 7500, "deposit kept apart from hire income");
+});
+
+await test("Phase 2", "Blocked dates can't be handed over; hires with records can't be deleted; plain bookings still can", async () => {
+  const blk = (await admin("POST", "/diary", { start_date: daysFromNow(180), end_date: daysFromNow(180), kind: "blocked" })).body.id;
+  assert.equal((await admin("POST", `/diary/${blk}/handover`, { checks: ALL_OK })).status, 409);
+  assert.equal((await admin("POST", `/diary/${blk}/payment`, { amount_pence: 100, method: "cash" })).status, 409);
+  const id = await newBooking(182);
+  await admin("POST", `/diary/${id}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  assert.equal((await admin("DELETE", `/diary/${id}`)).status, 409);
+  assert.ok(drow(id));
+  const plain = await newBooking(185);
+  assert.equal((await admin("DELETE", `/diary/${plain}`)).status, 200);
+  assert.equal(drow(plain), undefined);
+  assert.equal((await admin("POST", `/diary/999999/handover`, { checks: ALL_OK })).status, 404);
+});
+
+await test("Phase 2", "Legacy rows keep their values after migration 0010; old flag endpoints are gone", async () => {
+  const leg = DB.raw.prepare("INSERT INTO diary (start_date, end_date, kind, name, paid, returned, deposit_status) VALUES ('2026-01-01','2026-01-02','booking','Legacy',1,1,'refunded') RETURNING id").get() as any;
+  const d = drow(leg.id);
+  assert.equal(d.paid, 1); assert.equal(d.deposit_status, "refunded"); assert.equal(d.hire_paid_pence, null);
+  assert.equal((await admin("POST", `/diary/${leg.id}/paid`, { paid: true })).status, 404);
+  assert.equal((await admin("POST", `/diary/${leg.id}/returned`, { returned: true })).status, 404);
+});
+
+await test("Phase 2", "Today dashboard: going out, due back (incl. overdue), open enquiries, deposits to settle", async () => {
+  const savedDB = DB;
+  DB = makeD1("db/migrations");
+  env = baseEnv();
+  try {
+  const today = new RealDate(RealDate.now());
+  const iomToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Isle_of_Man" }).format(today);
+  const shift = (n: number) => iso(new RealDate(new RealDate(iomToday + "T12:00:00Z").getTime() + n * 86400000));
+  const mk = async (start: string, end: string, name: string) =>
+    (await admin("POST", "/diary", { start_date: start, end_date: end, kind: "booking", name })).body.id as number;
+  const goingOut = await mk(iomToday, shift(1), "Out Today");
+  const lateOut = await mk(shift(-1), shift(1), "Late Collect");
+  await mk(shift(3), shift(4), "Future");
+  const dueBack = await mk(shift(-1), iomToday, "Back Today");
+  await admin("POST", `/diary/${dueBack}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  const overdue = await mk(shift(-3), shift(-1), "Overdue");
+  await admin("POST", `/diary/${overdue}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  const settle = await mk(shift(-5), shift(-4), "Refund Me");
+  await admin("POST", `/diary/${settle}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  await admin("POST", `/diary/${settle}/return`, { checks: ALL_OK, refund_pence: 2500 });
+  const done = await mk(shift(-8), shift(-7), "All Settled");
+  await admin("POST", `/diary/${done}/handover`, { checks: ALL_OK, deposit_pence: 7500 });
+  await admin("POST", `/diary/${done}/return`, { checks: ALL_OK, refund_pence: 7500 });
+  await call("POST", "/api/enquiry", enquiry({ preferred_start: shift(20), name: "Open Enquiry" }));
+  const t = await admin("GET", "/today");
+  assert.equal(t.status, 200);
+  assert.equal(t.body.today, iomToday);
+  assert.deepEqual(t.body.going_out.map((x: any) => x.name).sort(), ["Late Collect", "Out Today"]);
+  assert.deepEqual(t.body.due_back.map((x: any) => x.name).sort(), ["Back Today", "Overdue"]);
+  assert.deepEqual(t.body.enquiries.map((x: any) => x.name), ["Open Enquiry"]);
+  assert.deepEqual(t.body.deposits_to_settle.map((x: any) => x.name), ["Refund Me"]);
+  const r = t.body.deposits_to_settle[0];
+  assert.equal(r.deposit_taken - r.deposit_refunded - r.deposit_deducted, 5000);
+  assert.equal(t.body.deposit_default_pence, 7500);
+  } finally {
+    DB = savedDB;
+    env = baseEnv();
+  }
 });
 
 await test("16 Admin", "Confirmation email failure is surfaced and audited; booking stays saved", async () => {

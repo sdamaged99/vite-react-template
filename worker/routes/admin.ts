@@ -3,6 +3,7 @@ import { lastDay, spanDaysFor } from "../../shared/booking";
 import { requireAccess } from "../lib/access";
 import { FULFILMENT_LABELS, sendConfirmationEmail, sendEnquiryEmails, type EnquiryEmailData } from "../lib/notify";
 import { CURRENT_TERMS } from "../lib/terms";
+import { DIARY_COLUMNS, registerHireRoutes } from "./hire";
 import type { AppBindings } from "../types";
 
 /**
@@ -12,12 +13,16 @@ import type { AppBindings } from "../types";
 export const adminRoutes = new Hono<AppBindings>();
 
 adminRoutes.use("*", requireAccess);
+registerHireRoutes(adminRoutes);
 
 adminRoutes.get("/me", (c) => c.json({ email: c.get("adminEmail") ?? null }));
 
 adminRoutes.get("/diary", async (c) => {
   const { results } = await c.env.DB.prepare(
-    "SELECT id, start_date, end_date, kind, name, note, enquiry_id, returned, paid, deposit_status FROM diary WHERE end_date >= date('now', '-30 days') ORDER BY start_date",
+    `SELECT ${DIARY_COLUMNS} FROM diary d LEFT JOIN enquiries e ON e.id = d.enquiry_id
+     WHERE d.end_date >= date('now', '-30 days')
+        OR (d.kind = 'booking' AND (d.returned = 0 AND d.handed_over_at IS NOT NULL))
+     ORDER BY d.start_date`,
   ).all();
   return c.json({ diary: results });
 });
@@ -50,6 +55,11 @@ adminRoutes.post("/diary", async (c) => {
 adminRoutes.delete("/diary/:id", async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id)) return c.json({ error: "Bad id" }, 400);
+  // Hires with handover or money records are kept: they are the evidence for the deposit.
+  const keep = await c.env.DB.prepare(
+    "SELECT 1 AS x FROM diary WHERE id = ?1 AND (handed_over_at IS NOT NULL OR hire_paid_pence IS NOT NULL OR EXISTS (SELECT 1 FROM deposit_entries WHERE diary_id = ?1))",
+  ).bind(id).first();
+  if (keep) return c.json({ error: "This hire has handover or payment records, so it can't be removed." }, 409);
   await c.env.DB.prepare("DELETE FROM diary WHERE id = ?").bind(id).run();
   await c.env.DB.prepare(
     "INSERT INTO audit_log (actor, action, entity, entity_id) VALUES (?, 'diary.delete', 'diary', ?)",
@@ -242,41 +252,6 @@ adminRoutes.post("/enquiries/:id/confirm", async (c) => {
     await audit(c.env.DB, c.get("adminEmail"), "enquiry.confirm_email_failed", "enquiry", id, sent.error);
   }
   return c.json({ ok: true, start: q.preferred_start, end, confirmation_emailed: sent.emailed });
-});
-
-/** Mark a diary booking's equipment as returned (never touches the deposit). */
-adminRoutes.post("/diary/:id/returned", async (c) => {
-  const id = Number(c.req.param("id"));
-  const body = (await c.req.json().catch(() => ({}))) as { returned?: boolean };
-  if (!Number.isInteger(id)) return c.json({ error: "Bad id" }, 400);
-  const val = body.returned === false ? 0 : 1;
-  await c.env.DB.prepare("UPDATE diary SET returned = ? WHERE id = ?").bind(val, id).run();
-  await audit(c.env.DB, c.get("adminEmail"), "diary.returned", "diary", id, String(val));
-  return c.json({ ok: true });
-});
-
-/** Record hire payment received — separate from 'returned' and the deposit. */
-adminRoutes.post("/diary/:id/paid", async (c) => {
-  const id = Number(c.req.param("id"));
-  const body = (await c.req.json().catch(() => ({}))) as { paid?: boolean };
-  if (!Number.isInteger(id)) return c.json({ error: "Bad id" }, 400);
-  const val = body.paid === false ? 0 : 1;
-  await c.env.DB.prepare("UPDATE diary SET paid = ? WHERE id = ?").bind(val, id).run();
-  await audit(c.env.DB, c.get("adminEmail"), "diary.paid", "diary", id, String(val));
-  return c.json({ ok: true });
-});
-
-/** Record the deposit outcome — an explicit, separate action from 'returned'. */
-adminRoutes.post("/diary/:id/deposit", async (c) => {
-  const id = Number(c.req.param("id"));
-  const body = (await c.req.json().catch(() => ({}))) as { status?: string };
-  const status = body.status ?? "";
-  if (!Number.isInteger(id) || !["held", "refunded", "deducted", "na"].includes(status)) {
-    return c.json({ error: "Bad request" }, 400);
-  }
-  await c.env.DB.prepare("UPDATE diary SET deposit_status = ? WHERE id = ?").bind(status, id).run();
-  await audit(c.env.DB, c.get("adminEmail"), "diary.deposit", "diary", id, status);
-  return c.json({ ok: true });
 });
 
 /** Recent administrative activity, newest first. */
