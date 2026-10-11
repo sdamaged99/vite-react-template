@@ -43,7 +43,7 @@ async function getConnect(): Promise<ConnectFn> {
 }
 
 function addrOnly(s: string): string {
-  const m = s.match(/<([^>]+)>/);
+  const m = s.match(/<([^<>]+)>\s*$/);
   return m?.[1] ?? s.trim();
 }
 
@@ -103,13 +103,35 @@ class Session {
   }
 }
 
+/** Header values never carry line breaks (defence against header injection). */
+const oneLine = (v: string) => v.replace(/[\r\n]+/g, " ");
+
+/** RFC 2047 encoded-word for non-ASCII header text (e.g. the em dash in subjects). */
+function encodeWord(v: string): string {
+  if (/^[\x20-\x7e]*$/.test(v)) return v;
+  const bytes = new TextEncoder().encode(v);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return `=?UTF-8?B?${btoa(bin)}?=`;
+}
+
+/** "Name <addr>" with the display name quoted or encoded; bare addresses pass through. */
+function formatAddress(v: string): string {
+  const m = oneLine(v).match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  if (!m || !m[1]) return oneLine(v).trim();
+  const name = m[1].replace(/^"|"$/g, "");
+  const shown = /^[\x20-\x7e]*$/.test(name) ? `"${name.replace(/["\\]/g, "")}"` : encodeWord(name);
+  return `${shown} <${m[2]}>`;
+}
+
 function buildMessage(mail: Mail): string {
   const headers = [
-    `From: ${mail.from}`,
-    `To: ${mail.to.join(", ")}`,
-    ...(mail.replyTo ? [`Reply-To: ${mail.replyTo}`] : []),
-    `Subject: ${mail.subject.replace(/[\r\n]/g, " ")}`,
+    `From: ${formatAddress(mail.from)}`,
+    `To: ${mail.to.map(formatAddress).join(", ")}`,
+    ...(mail.replyTo ? [`Reply-To: ${formatAddress(mail.replyTo)}`] : []),
+    `Subject: ${encodeWord(oneLine(mail.subject))}`,
     `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${crypto.randomUUID()}@sparklecarpets.im>`,
     "MIME-Version: 1.0",
     "Content-Type: text/plain; charset=utf-8",
     "Content-Transfer-Encoding: 8bit",
@@ -140,7 +162,9 @@ export async function sendMail(cfg: SmtpConfig, mail: Mail): Promise<void> {
       await s.reply([250]);
     }
 
-    const token = btoa(`\u0000${cfg.user}\u0000${cfg.pass}`);
+    let bin = "";
+    for (const b of new TextEncoder().encode(`\u0000${cfg.user}\u0000${cfg.pass}`)) bin += String.fromCharCode(b);
+    const token = btoa(bin);
     await s.send(`AUTH PLAIN ${token}`);
     await s.reply([235]);
 

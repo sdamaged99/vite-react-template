@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   FULFILMENTS,
   computeEstimate,
+  isFriday,
   lastDay,
   spanDaysFor,
   todayIoM,
@@ -83,6 +84,9 @@ interface EnquiryBody {
 }
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+// Names end up in email headers: strip control characters (header injection)
+// and angle brackets/quotes/commas (which could redirect the "To" address).
+const headerSafe = (v: string) => v.replace(/[\u0000-\u001f\u007f<>",;]/g, " ").replace(/\s+/g, " ").trim();
 
 async function verifyTurnstile(env: Env, token: string, ip: string | undefined): Promise<boolean> {
   if (!env.TURNSTILE_SECRET_KEY) return true; // not configured yet
@@ -104,7 +108,7 @@ publicRoutes.post("/enquiry", async (c) => {
 
   if (str(body.website, 10) !== "") return c.json({ ok: true, emailed: true }); // honeypot: pretend success
 
-  const name = str(body.name, 100);
+  const name = headerSafe(str(body.name, 100));
   const email = str(body.email, 200);
   const phone = str(body.phone, 40);
   const preferredStart = str(body.preferred_start, 10);
@@ -134,6 +138,10 @@ publicRoutes.post("/enquiry", async (c) => {
   // happens later, when Amanda agrees the arrangements with the customer.
   if (body.terms_acknowledged !== true) {
     return c.json({ error: "Please confirm you have read the proposed Equipment Hire Terms & Conditions." }, 400);
+  }
+
+  if (plan === "weekend" && !isFriday(preferredStart)) {
+    return c.json({ error: "Weekend hire starts on a Friday. Please pick a Friday, or choose another hire length." }, 400);
   }
 
   const planRow = await c.env.DB.prepare(
