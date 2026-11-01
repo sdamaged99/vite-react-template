@@ -36,7 +36,9 @@ const PUBLIC_SETTINGS = [
 ] as const;
 
 publicRoutes.get("/pricing", async (c) => {
-  const [rates, addons, zones, settings] = await c.env.DB.batch([
+  // D1 returns one result per statement; the tuple type is needed because
+  // noUncheckedIndexedAccess otherwise makes each element possibly undefined.
+  const [rates, addons, zones, settings] = (await c.env.DB.batch([
     c.env.DB.prepare(
       "SELECT code, label, duration_hours, price_pence FROM rate_plans WHERE active = 1 ORDER BY duration_hours",
     ),
@@ -47,7 +49,7 @@ publicRoutes.get("/pricing", async (c) => {
     c.env.DB.prepare(
       `SELECT key, value FROM settings WHERE key IN (${PUBLIC_SETTINGS.map(() => "?").join(",")})`,
     ).bind(...PUBLIC_SETTINGS),
-  ]);
+  ])) as [D1Result, D1Result, D1Result, D1Result];
   const settingsMap: Record<string, string> = {};
   for (const row of settings.results as { key: string; value: string }[]) settingsMap[row.key] = row.value;
   c.header("Cache-Control", "public, max-age=300");

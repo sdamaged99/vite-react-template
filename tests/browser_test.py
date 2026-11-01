@@ -7,6 +7,7 @@ Run: python3 tests/browser_test.py
 """
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
 import time
@@ -77,7 +78,7 @@ busy_start = first(lambda d: d.weekday() == 2, 5)  # a Wednesday
 busy_end = busy_start + dt.timedelta(days=1)  # Wed-Thu blocked
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+    browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM") or None)
     # Phone-width viewport. Mobile emulation (is_mobile) is off: with the page
     # unstyled offline it makes Chromium clicks hang, and behaviour is identical.
     ctx = browser.new_context(viewport={"width": 375, "height": 800})

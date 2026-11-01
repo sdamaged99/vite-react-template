@@ -651,7 +651,7 @@ async function loadEnquiries() {
           ["whatsapp", "by WhatsApp"],
           ["phone", "by phone"],
           ["in_person", "in person"],
-        ]) {
+        ] as const) {
           const opt = document.createElement("option");
           opt.value = value;
           opt.textContent = label;

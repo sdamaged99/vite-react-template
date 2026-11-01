@@ -161,7 +161,7 @@ widths = [(320, "phone-320"), (375, "phone-375"), (414, "phone-414"), (768, "tab
 report = {}
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+    browser = p.chromium.launch(executable_path=os.environ.get("CHROMIUM") or None)
     token = urllib.request.urlopen(f"{BASE}/__test/jwt").read().decode()
 
     def ctx_for(width, admin=False):

@@ -4,7 +4,7 @@ Equipment-hire website for sparklecarpets.im: React islands on a static marketin
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24 (an official build: the test harness runs the Worker's TypeScript through Node's built-in type stripping, which some distro-packaged builds leave out)
 - A Cloudflare account with Workers and D1 enabled
 - `npx wrangler login` completed
 
