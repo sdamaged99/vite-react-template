@@ -1,0 +1,8 @@
+[Unit]
+Description=Sparkle Carpets database backup
+
+[Service]
+Type=oneshot
+User=sparkle
+Group=sparkle
+ExecStart=/opt/sparkle-carpets/deploy/backup.sh

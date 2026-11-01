@@ -31,6 +31,8 @@ The Cloudflare Vite plugin runs the Worker and static assets together at the dev
 
 ## Deployment
 
+The self-hosted setup is in `SELF_HOSTING.md`. The Cloudflare route below still applies until that cutover.
+
 Preferred: connect the GitHub repository to Cloudflare Workers Builds (Workers & Pages → the worker → Settings → Builds). Pushes to `main` deploy automatically; pull requests get preview URLs. Manual fallback: `npm run deploy`.
 
 DNS for sparklecarpets.im is already on Cloudflare; add the custom domain to the Worker under Settings → Domains & Routes.
@@ -54,6 +56,7 @@ node --experimental-strip-types tests/booking.test.ts            # date and mone
 node --experimental-transform-types --import ./tests/harness/register.mjs tests/api.test.ts   # real Worker on SQLite + fake SMTP
 python3 tests/browser_test.py                                     # real pages and client code in headless Chromium
 python3 tests/retention_test.py                                   # the OPERATIONS.md retention SQL against seeded data
+python3 tests/self_host_test.py                                   # built Node server: real HTTP, SQLite and TLS (run both builds first)
 SITE_CSS=… FONT_DIR=… SHOT_DIR=… python3 tests/visual_test.py     # styled layout/contrast/tap-target audit + screenshots
 ```
 

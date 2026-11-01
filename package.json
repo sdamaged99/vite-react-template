@@ -10,15 +10,20 @@
     "typecheck": "tsc -b",
     "deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 migrations apply sparkle-carpets --local",
-    "db:migrate:remote": "wrangler d1 migrations apply sparkle-carpets --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply sparkle-carpets --remote",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/server/index.mjs --alias:cloudflare:sockets=./server/sockets.ts --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
+    "start": "node dist/server/index.mjs"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
     "hono": "^4.8.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.9.0",
     "@cloudflare/workers-types": "^5.20261023.1",
     "@tailwindcss/vite": "^4.1.11",
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.25.12",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",

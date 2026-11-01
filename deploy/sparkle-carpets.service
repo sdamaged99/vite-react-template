@@ -1,0 +1,17 @@
+[Unit]
+Description=Sparkle Carpets website
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=sparkle
+Group=sparkle
+WorkingDirectory=/opt/sparkle-carpets
+EnvironmentFile=/etc/sparkle-carpets/env
+ExecStart=/usr/local/bin/node --no-warnings dist/server/index.mjs
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
