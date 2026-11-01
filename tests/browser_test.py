@@ -227,6 +227,7 @@ with sync_playwright() as p:
         assert checked == 5 * 2 * (1 + 3 * 4), checked
     check("13 Pricing", "Live estimate: every package x transport option (4 zones each) x extras, itemised", estimate_matrix)
 
+
     def other_area():
         tab(page, 1); cont(page)
         page.select_option("#enq-fulfilment", "both")
@@ -234,6 +235,10 @@ with sync_playwright() as p:
         assert "__other" in opts, f"'Other location' option missing after prices load: {opts}"
         page.select_option("#enq-area", "__other")
         assert page.locator("#enq-other").is_visible()
+        assert page.text_content("#est-transport-label").endswith(", other location")
+        page.select_option("#enq-area", "Peel, St John's, Laxey")
+        assert page.text_content("#est-transport-label").endswith("Peel, St John's, Laxey"), "estimate names the chosen area"
+        page.select_option("#enq-area", "__other")
         assert page.text_content("#est-transport") == "To be quoted"
         assert page.text_content("#est-due") == "To be quoted"
         cont(page)
@@ -411,11 +416,11 @@ with sync_playwright() as p:
         home = " ".join(page.text_content("body").split())
         page.goto(BASE + "/instructions/", wait_until="domcontentloaded")
         ins = " ".join(page.text_content("body").split())
-        phrase = "normally refunded within 48 hours of return and inspection, subject to the hire terms"
-        assert home.count(phrase) == 3, home.count(phrase)  # how it works, prices, FAQ
-        assert phrase in ins
+        phrase = "within 48 hours of return and inspection"
+        assert "we aim to refund it " + phrase in home, "home page matches terms 4.4"
+        assert "aim to refund your deposit " + phrase in ins
         assert "comes straight back" not in ins and "rental agreement" not in home
-    check("Content", "Deposit refund wording identical on homepage (3 places) and instructions, matching terms 4.4", deposit_consistent)
+    check("Content", "Deposit refund wording on homepage and instructions matches terms 4.4", deposit_consistent)
 
     # ------------------------------------------- availability API failure -----
     def fill_basic(pg, name, d, plan="24h"):
@@ -522,8 +527,9 @@ with sync_playwright() as p:
         assert fig.count() == 1 and fig.locator("img").count() == 0
         assert "Placeholder photo" in fig.text_content()
         photos = page.eval_on_selector_all('img[src*="/images/"]', "is => is.map(i => i.getAttribute('src'))")
-        assert [p for p in photos if not p.endswith("machine-dimensions.svg")] == ["/images/hero-living-room.jpg"], photos
-    check("7 Placeholder", "Machine photo placeholder unchanged; no new imagery", placeholder_kept)
+        assert [p for p in photos if not p.endswith("machine-dimensions.svg")] == [], photos
+        assert "Placeholder photo" in page.locator("#hero-photo").text_content()
+    check("7 Placeholder", "Hero and machine photos are marked placeholders; no stock imagery", placeholder_kept)
 
     def wording():
         page.goto(BASE + "/", wait_until="domcontentloaded")

@@ -1,32 +1,38 @@
 @import "tailwindcss";
 
 /*
-  Sparkle Carpets identity: "fresh linen boutique" (design Concept B).
-  Chambray blue + oat + ink-navy, arched photo frames as the recurring
-  graphic language, Young Serif display with Karla body.
+  Sparkle Carpets identity: warm, friendly, small local business.
+  Cream, oatmeal, terracotta, sage and charcoal. Fraunces headings, Nunito
+  body, and Caveat only for the single handwritten greeting in the hero.
   Light-only by deliberate choice for the public site (PROJECT_CONTEXT.md).
 */
 @theme {
-  --color-linen: #f5f3ee;
-  --color-oat: #ece7dc;
-  --color-ink: #2a3340;
-  --color-ink-soft: #5b6572; /* darkened from #64707e for AA contrast on oat and mist */
-  --color-chambray: #7e9bb4;
-  --color-chambray-deep: #4f6f8c;
-  --color-mist: #dce5ec;
-  --color-card: #fcfbf8;
-  --color-rec: #eef3f7;
-  --color-line: #dcd7cb;
-  --color-foot-line: #3b4654;
-  --color-foot-text: #c7d0db;
+  --color-linen: #fbf6ec; /* cream page background */
+  --color-oat: #f2e8d7; /* oatmeal sections */
+  --color-photo: #ecdfc9; /* photo slots */
+  --color-ink: #33302b; /* charcoal */
+  --color-ink-soft: #5f5a51;
+  --color-terra: #b5472a;
+  --color-terra-dark: #923820;
+  --color-terra-soft: #d08f73;
+  --color-sage: #55684c;
+  --color-sage-dark: #3e4f37;
+  --color-sage-soft: #e6ebdc;
+  --color-card: #fffdf9;
+  --color-rec: #fbf1e4;
+  --color-line: #e3d8c5;
+  --color-foot-line: #4f4a42;
+  --color-foot-text: #dcd5c9;
 
   --font-display: "Fraunces", Georgia, serif;
-  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-hand: "Caveat", cursive;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 84px;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -34,92 +40,129 @@
     }
   }
   body {
-    @apply bg-linen font-body text-[17px] leading-relaxed text-ink antialiased;
+    @apply bg-linen font-body text-[18px] leading-[1.6] text-ink antialiased;
   }
   h1,
   h2,
   h3 {
-    @apply font-display font-normal text-balance leading-[1.12];
+    @apply font-display font-semibold text-balance leading-[1.14];
+    font-variation-settings: "SOFT" 60, "WONK" 0;
+  }
+  a {
+    /* terra alone falls just under AA for body-size links on oatmeal */
+    @apply text-terra-dark hover:text-ink;
   }
   :focus-visible {
-    @apply rounded-md outline-[3px] outline-offset-2 outline-chambray-deep;
+    @apply rounded-md outline-[3px] outline-offset-2 outline-terra;
   }
 }
 
 @layer components {
   .shell {
-    @apply mx-auto max-w-[1080px] px-[22px];
+    @apply mx-auto max-w-[1160px] px-4 sm:px-6;
   }
   .btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-ink bg-ink px-[26px] py-3.5 text-base font-bold text-linen no-underline transition-colors hover:border-chambray-deep hover:bg-chambray-deep;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-terra bg-terra px-[28px] py-3 text-[17px] font-extrabold text-white no-underline transition-colors hover:border-terra-dark hover:bg-terra-dark hover:text-white;
   }
   .btn-ghost {
-    @apply border-ink bg-transparent text-ink hover:border-ink hover:bg-mist hover:text-ink;
+    @apply border-ink bg-transparent text-ink hover:border-ink hover:bg-sage-soft hover:text-ink;
   }
   .nav-pill {
-    @apply rounded-full px-3.5 py-2 text-[15px] font-medium text-ink no-underline hover:bg-mist;
+    @apply rounded-full px-3 py-2 text-[16px] font-bold text-ink no-underline hover:bg-sage-soft hover:text-ink;
   }
-  /* Placeholder marker: anything not yet real carries one, so nothing invented ships unnoticed. */
-  .ph {
-    @apply inline-flex items-center rounded-full border-[1.5px] border-dashed border-chambray bg-linen px-[9px] py-[2px] text-[11px] font-bold tracking-[0.09em] text-chambray-deep;
+  .brand {
+    @apply flex flex-col whitespace-nowrap leading-[1.14] text-ink no-underline hover:text-ink;
+  }
+  .brand-name {
+    @apply font-display text-[23px] font-semibold sm:text-[25px];
+    font-variation-settings: "SOFT" 60, "WONK" 0;
+  }
+  .brand-tag {
+    @apply text-[14px] font-bold text-terra;
+  }
+  .hand {
+    @apply font-hand text-[28px] font-bold leading-none text-sage;
   }
 
-  /* Photography stand-in: layered wash + grain + shot direction.
-     Replace with real photographs; the markup stays identical. */
-  .shot {
-    @apply relative overflow-hidden;
-    background:
-      radial-gradient(110% 80% at 25% 10%, #afc2cf, transparent 60%),
-      radial-gradient(120% 95% at 80% 100%, #45566a, transparent 55%),
-      #7b8fa0;
+  /* Soft curved edge between full-width sections */
+  .wave {
+    @apply block h-7 w-full sm:h-11;
   }
-  .shot::after {
-    content: "";
-    @apply absolute inset-0 opacity-30 mix-blend-overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+
+  /* Hero: heading, photo with price card, then copy on phones;
+     heading and copy beside the photo from lg. */
+  .hero {
+    @apply grid gap-x-11 gap-y-3 pt-3 pb-6 lg:grid-cols-[1.05fr_0.95fr] lg:grid-rows-[auto_1fr] lg:pt-6 lg:pb-11;
   }
-  .arch {
-    border-radius: 220px 220px 16px 16px;
+  .hero-media {
+    @apply grid content-start lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center;
   }
-  .shot-note {
-    @apply absolute inset-x-4 bottom-3.5 z-[2] text-center text-[12.5px] italic leading-normal text-linen;
+  .hero-body {
+    @apply grid justify-items-stretch gap-3 lg:justify-items-start lg:self-start;
+  }
+  .price-card {
+    @apply relative z-[2] -mt-12 mx-2.5 rounded-2xl bg-white px-4 py-3 shadow-[0_8px_24px_rgba(92,66,37,0.15)] lg:-mt-20 lg:mr-0 lg:ml-6 lg:w-[370px] lg:max-w-[calc(100%-1.5rem)] lg:px-[22px] lg:py-4;
+  }
+  .hc-rows {
+    @apply grid grid-cols-3 gap-1.5 lg:grid-cols-1 lg:gap-0;
+  }
+  .hc-row {
+    @apply flex flex-col items-center lg:flex-row lg:justify-between lg:border-b lg:border-[#efe6d6] lg:py-[3px];
+  }
+  .hc-name {
+    @apply text-[15px] font-bold lg:text-[18px];
+  }
+  .hc-price {
+    @apply text-[26px] leading-[1.15] font-extrabold tabular-nums lg:text-[25px];
+  }
+
+  /* Photo slots: real photographs replace these; the frame stays. */
+  .photo {
+    @apply relative flex items-center justify-center overflow-hidden rounded-[20px] bg-photo p-5 text-center font-bold text-[#4d3d27] sm:rounded-[26px];
   }
   .shot-tag {
-    @apply absolute left-1/2 top-3.5 z-[2] -translate-x-1/2 whitespace-nowrap rounded-full border border-linen/65 px-2.5 py-[3px] text-[10.5px] tracking-[0.12em] text-linen;
+    @apply absolute top-3 left-3 rounded-full border border-dashed border-[#8a6a42] bg-linen px-2.5 py-0.5 text-[13px] font-bold;
   }
 
-  /* Wobbly underline accent */
-  .squig {
-    @apply relative inline-block whitespace-nowrap;
+  /* Plain price and charge tables */
+  .plain-table {
+    @apply w-full border-collapse;
   }
-  .squig::after {
-    content: "";
-    @apply absolute -bottom-1.5 left-0 right-0 h-2;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M0 7 Q 15 1 30 6 T 60 6 T 90 6 T 120 5' fill='none' stroke='%237E9BB4' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
-      no-repeat center / 100% 100%;
+  .plain-table td {
+    @apply border-b border-[#dccdb4] py-2 pr-3 align-middle;
   }
-
-  /* Café-menu price rows */
-  .menu-leader {
-    @apply flex-1 -translate-y-1 border-b-2 border-dotted border-line;
+  .plain-table td:last-child {
+    @apply pr-0 text-right font-extrabold whitespace-nowrap tabular-nums;
+  }
+  .badge {
+    @apply ml-2 inline-block rounded-full bg-sage-soft px-2.5 py-px text-[14px] font-extrabold text-sage-dark;
   }
 
   /* Delivery zone table */
   .zones {
-    @apply w-full border-collapse text-[15px];
+    @apply w-full border-collapse text-[16px] sm:text-[17px];
+  }
+  .zones caption {
+    @apply pb-1 text-left font-extrabold;
   }
   .zones th {
-    @apply border-b-2 border-line pb-2 text-left font-bold;
+    @apply border-b-2 border-ink py-1.5 pr-3 text-left font-extrabold;
   }
   .zones td {
-    @apply border-b border-line py-2.5 pr-4;
+    @apply border-b border-line py-1.5 pr-3;
   }
   .zones th:not(:first-child),
   .zones td:not(:first-child) {
-    @apply pr-0 text-right font-semibold tabular-nums;
+    @apply text-right tabular-nums;
   }
-  .zones td:first-child {
-    @apply text-ink-soft;
+  .zones th:last-child,
+  .zones td:last-child {
+    @apply pr-0;
+  }
+
+  /* Café-menu rows in the estimate */
+  .menu-leader {
+    @apply flex-1 -translate-y-1 border-b border-line;
   }
 
   /* Availability calendar (read-only) */
@@ -127,7 +170,7 @@
     @apply grid gap-2;
   }
   .cal-title {
-    @apply text-[15px] font-bold;
+    @apply text-[17px] font-extrabold;
   }
   /* One month at a time below lg; both side by side from lg. */
   .cal-month:not([data-active]) {
@@ -137,7 +180,7 @@
     @apply mb-1 flex items-center gap-2;
   }
   .cal-nav {
-    @apply grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-card text-ink disabled:opacity-35 lg:hidden;
+    @apply grid h-11 w-11 shrink-0 place-items-center rounded-full border border-line bg-card text-ink disabled:opacity-35 lg:hidden;
   }
 
   /* Three-step enquiry */
@@ -145,22 +188,22 @@
     @apply m-0 grid list-none grid-cols-3 gap-2 p-0;
   }
   .step-tab {
-    @apply flex min-h-11 w-full items-center gap-2 rounded-xl border border-line bg-card px-2.5 py-2 text-left text-[13px] font-semibold leading-tight text-ink-soft sm:text-[14px] disabled:cursor-default disabled:opacity-60;
+    @apply flex min-h-11 w-full items-center gap-2 rounded-xl border border-line bg-card px-2.5 py-2 text-left text-[15px] font-bold leading-tight text-ink-soft disabled:cursor-default disabled:opacity-70;
   }
   .step-tab[aria-current="step"] {
-    @apply border-chambray-deep bg-rec text-ink;
+    @apply border-terra bg-rec text-ink;
   }
   .step-num {
-    @apply grid h-6 w-6 shrink-0 place-items-center rounded-full bg-oat text-[12.5px] font-bold text-ink;
+    @apply grid h-6 w-6 shrink-0 place-items-center rounded-full bg-oat text-[14px] font-extrabold text-ink;
   }
   .step-tab[aria-current="step"] .step-num {
-    @apply bg-chambray-deep text-linen;
+    @apply bg-terra text-white;
   }
   .step-panel {
     @apply grid content-start gap-4;
   }
   .step-title {
-    @apply font-display text-[21px];
+    @apply font-display text-[23px];
   }
   .step-nav {
     @apply flex flex-wrap gap-3 pt-1;
@@ -168,7 +211,7 @@
 
   /* Estimate: compact expandable bar on phones/tablets, open card on desktop */
   .est-card {
-    @apply rounded-xl border border-line bg-card text-[14px] shadow-[0_6px_18px_-12px_rgba(42,51,64,0.45)] lg:shadow-none;
+    @apply rounded-2xl border border-line bg-card text-[16px] shadow-[0_6px_18px_-12px_rgba(92,66,37,0.45)] lg:shadow-none;
   }
   .est-summary {
     @apply flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-2.5 lg:cursor-default lg:pb-0 [&::-webkit-details-marker]:hidden;
@@ -183,28 +226,28 @@
     @apply grid max-h-[55vh] gap-1.5 overflow-y-auto px-4 pt-1 pb-3.5 lg:max-h-none lg:overflow-visible;
   }
   .cal-grid {
-    @apply grid grid-cols-7 gap-1 text-center text-[13px] tabular-nums;
+    @apply grid grid-cols-7 gap-1 text-center text-[15px] tabular-nums;
   }
   .cal-dow {
-    @apply text-[11px] font-bold text-ink-soft;
+    @apply text-[13px] font-extrabold text-ink-soft;
   }
   .cal-day {
-    @apply grid min-h-[38px] place-items-center rounded-md border border-transparent p-0 font-body;
+    @apply grid min-h-[40px] place-items-center rounded-md border border-transparent p-0 font-body;
   }
   .cal-free {
-    @apply cursor-pointer border-line bg-card hover:border-chambray;
+    @apply cursor-pointer border-line bg-card hover:border-terra-soft;
   }
   .cal-nostart {
-    @apply border-line/60 bg-card text-ink-soft/60;
+    @apply border-line/60 bg-card text-ink-soft;
   }
   .cal-busy {
-    @apply bg-ink-soft/80 text-linen line-through;
+    @apply bg-ink-soft text-white line-through;
   }
   .cal-past {
-    @apply text-ink-soft/50;
+    @apply text-ink-soft;
   }
   .cal-sel {
-    @apply border-2 border-chambray-deep bg-rec font-bold;
+    @apply border-2 border-terra bg-rec font-extrabold;
   }
   .cal-conflict {
     @apply border-2 border-[#b3564f] bg-[#f7e9e7];
@@ -212,35 +255,35 @@
 
   /* Enquiry form */
   .field {
-    @apply grid min-w-0 gap-1 text-[14px] font-semibold;
+    @apply grid min-w-0 gap-1 text-[16px] font-bold;
   }
   .field input,
   .field select,
   .field textarea {
     /* 16px minimum stops iOS Safari zooming the page on focus */
     /* w-full + min-w-0: a select is otherwise as wide as its longest option and pushes the page sideways */
-    @apply w-full min-w-0 rounded-lg border border-line bg-card px-3 py-2.5 font-body text-[16px] font-normal text-ink;
+    @apply w-full min-w-0 rounded-lg border border-[#c9baa0] bg-card px-3 py-2.5 font-body text-[17px] font-normal text-ink;
   }
   .enq-ok {
-    @apply rounded-xl border border-chambray-deep bg-rec px-5 py-4 text-[15px];
+    @apply rounded-xl border border-sage bg-sage-soft px-5 py-4 text-[16px];
   }
   .enq-err {
-    @apply rounded-xl border border-[#b3564f] bg-[#f7e9e7] px-5 py-4 text-[15px];
+    @apply rounded-xl border border-[#b3564f] bg-[#f7e9e7] px-5 py-4 text-[16px];
   }
   .draft-banner {
-    @apply mb-8 rounded-xl border-2 border-dashed border-chambray-deep bg-rec px-5 py-3.5 text-[14.5px] font-semibold;
+    @apply mb-8 rounded-xl border-2 border-dashed border-terra bg-rec px-5 py-3.5 text-[15px] font-semibold;
   }
 
   /* FAQ accordions */
   .faq-item {
-    @apply mb-3 overflow-hidden rounded-[14px] border border-line bg-card;
+    @apply border-t border-line;
   }
   .faq-item summary {
-    @apply flex cursor-pointer list-none items-center justify-between gap-4 px-[22px] py-[18px] font-bold [&::-webkit-details-marker]:hidden;
+    @apply flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-2 font-extrabold [&::-webkit-details-marker]:hidden;
   }
   .faq-item summary::after {
     content: "+";
-    @apply font-display text-xl text-chambray-deep;
+    @apply font-display text-xl text-terra;
   }
   .faq-item[open] summary::after {
     content: "\2212";

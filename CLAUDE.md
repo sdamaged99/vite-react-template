@@ -86,7 +86,8 @@ Key tables: `rate_plans`, `addons`, `delivery_zones`, `settings` (prices and swi
 - Never fabricate photos, reviews, testimonials or machine figures. The machine photo is a deliberate placeholder until Amanda supplies real ones. Dimensions shown are the verified 107 × 28 × 52 cm only.
 - Dates are Isle of Man calendar dates (`todayIoM()`, DST-safe). Weekend hire is Fri–Mon and blocks the Monday. Pending enquiries never block availability.
 - Privacy notice v1.1 promises no fixed retention periods; OPERATIONS.md has the monthly housekeeping SQL (internal defaults: 10 months / 6 years).
-- English (GB), plain wording, no marketing fluff. Preserve the design (tokens in `main.css`); `ink-soft` is `#5b6572` for AA contrast.
+- English (GB), plain, friendly wording, no marketing fluff. Preserve the design (tokens in `main.css`): cream, oatmeal, terracotta, sage and charcoal, Fraunces and Nunito. Caveat is used only for the hero greeting.
+- The site is business-led: use "we", "us" and "Sparkle Carpets". No personal photos, names or contact details on marketing pages or customer emails without explicit approval. Amanda's name stays only on the terms and privacy notice as the trader disclosure.
 
 ## Gotchas already hit
 
@@ -102,7 +103,7 @@ Key tables: `rate_plans`, `addons`, `delivery_zones`, `settings` (prices and swi
 2. **Live smoke test** once configured: enquiry → both emails → record acceptance → confirm → handover → return → refund; then delete the test rows.
 3. Print the QR sticker from `/qr/` only once `sparklecarpets.im` is live, and test-scan it.
 4. Confirm Information Commissioner registration and where the NethServer is hosted (privacy notice may need it).
-5. Real machine photos → swap the placeholder (instructions in `index.html` comments), then optionally the gallery manifest.
+5. Real photos of the machine in a real home → swap the two placeholders (instructions in `index.html` comments), then optionally the gallery manifest.
 6. Prepared features (all OFF, see README "Prepared features"): reminders (needs a cron trigger in `wrangler.jsonc` **and** `reminders_enabled='1'`), WhatsApp follow-up (verified number **and** `whatsapp_followup='1'`), gallery, testimonials.
 7. Known limitations: equipment photos aren't uploaded (just a "photos taken" tick; would need R2); structured-data prices in `index.html` must be updated by hand if D1 prices change; preview builds share production D1.
 

@@ -62,13 +62,15 @@ post_enquiry(name="Bob Example", preferred_start=(today + dt.timedelta(days=30))
 
 FONT_CSS = """
 @font-face{font-family:'Fraunces';src:url(https://fonts.gstatic.com/local/fraunces.ttf) format('truetype');font-weight:100 900;font-style:normal}
-@font-face{font-family:'Figtree';src:url(https://fonts.gstatic.com/local/figtree.ttf) format('truetype');font-weight:300 900;font-style:normal}
-@font-face{font-family:'Figtree';src:url(https://fonts.gstatic.com/local/figtree-italic.ttf) format('truetype');font-weight:300 900;font-style:italic}
+@font-face{font-family:'Fraunces';src:url(https://fonts.gstatic.com/local/fraunces-italic.ttf) format('truetype');font-weight:100 900;font-style:italic}
+@font-face{font-family:'Nunito';src:url(https://fonts.gstatic.com/local/nunito.ttf) format('truetype');font-weight:200 1000;font-style:normal}
+@font-face{font-family:'Caveat';src:url(https://fonts.gstatic.com/local/caveat.ttf) format('truetype');font-weight:400 700;font-style:normal}
 """
 FONT_FILES = {
     "fraunces.ttf": "Fraunces[SOFT,WONK,opsz,wght].ttf",
-    "figtree.ttf": "Figtree[wght].ttf",
-    "figtree-italic.ttf": "Figtree-Italic[wght].ttf",
+    "fraunces-italic.ttf": "Fraunces-Italic[SOFT,WONK,opsz,wght].ttf",
+    "nunito.ttf": "Nunito[wght].ttf",
+    "caveat.ttf": "Caveat[wght].ttf",
 }
 
 AUDIT_JS = r"""

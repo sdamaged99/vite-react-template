@@ -425,7 +425,7 @@ await test("15 Terms", "Confirming does NOT record formal acceptance; confirmati
   const mail = smtpState.sessions[0]!.messages[0]!.data;
   assert.ok(mail.includes(`Equipment Hire Terms & Conditions v${CURRENT_TERMS.version}.`), "names the version");
   assert.ok(!mail.includes("which you accepted"));
-  assert.ok(mail.includes("Handover may be with Amanda or with Barry"));
+  assert.ok(!/Amanda|Barry/.test(mail.split("EQUIPMENT HIRE TERMS")[0]!), "no personal names in the email body");
   const canon = readFileSync(`terms/versions/v${CURRENT_TERMS.version}.txt`, "utf8").replace(/\r?\n/g, "\r\n").replace(/(^|\r\n)\./g, "$1..");
   assert.ok(mail.includes(canon.trimEnd()), "durable full copy of the acknowledged version embedded verbatim");
 });

@@ -170,7 +170,7 @@ function checklist(prefix: string, detergentLabel: string): { node: HTMLElement;
   const inputs: Record<string, HTMLInputElement> = {};
   for (const [key, label, def] of CHECKS) {
     const lab = el("label", "flex min-h-9 items-center gap-2.5 text-[14.5px]");
-    const cb = el("input", "h-5 w-5 shrink-0 accent-[var(--color-chambray-deep)]");
+    const cb = el("input", "h-5 w-5 shrink-0 accent-[var(--color-terra)]");
     cb.type = "checkbox";
     cb.checked = def;
     cb.name = `${prefix}-${key}`;
@@ -229,7 +229,7 @@ function handoverPanel(d: DiaryEntry, open: boolean): HTMLElement {
   if (!d.paid) {
     const row = el("div", "grid gap-3 sm:grid-cols-[auto_1fr_1fr] sm:items-end");
     const lab = el("label", "flex min-h-11 items-center gap-2.5 text-[14.5px] font-semibold");
-    payTick = el("input", "h-5 w-5 accent-[var(--color-chambray-deep)]");
+    payTick = el("input", "h-5 w-5 accent-[var(--color-terra)]");
     payTick.type = "checkbox";
     // Ticked when the expected hire amount is known from the enquiry; otherwise
     // Amanda ticks it and types the amount, so nothing is recorded by accident.
@@ -395,7 +395,7 @@ function hireCard(d: DiaryEntry, today: string, openAction: boolean): HTMLElemen
   if (!d.handed_over_at && !d.returned && d.start_date < today) top.append(chip("Late collection", "bg-[#f7e9e7] text-[#8a2f28]"));
   if (d.handed_over_at && !d.returned && d.end_date < today) top.append(chip("Overdue", "bg-[#f7e9e7] text-[#8a2f28]"));
   if (d.phone) {
-    const tel = el("a", "ml-auto font-semibold text-chambray-deep no-underline", d.phone);
+    const tel = el("a", "ml-auto font-semibold text-terra no-underline", d.phone);
     tel.href = `tel:${d.phone.replace(/[^\d+]/g, "")}`;
     top.append(tel);
   }
@@ -452,7 +452,7 @@ async function loadDiary() {
       const top = document.createElement("div");
       top.className = "flex flex-wrap items-center gap-3";
       top.append(
-        chip(d.kind === "booking" ? "Booking" : "Blocked", d.kind === "booking" ? "bg-rec text-chambray-deep" : "bg-oat text-ink-soft"),
+        chip(d.kind === "booking" ? "Booking" : "Blocked", d.kind === "booking" ? "bg-rec text-terra" : "bg-oat text-ink-soft"),
       );
       const when = document.createElement("strong");
       when.textContent = d.start_date === d.end_date ? fmt(d.start_date) : `${fmt(d.start_date)} to ${fmt(d.end_date)}`;
@@ -461,9 +461,9 @@ async function loadDiary() {
       who.textContent = [d.name, d.note].filter(Boolean).join(" · ");
       top.append(when, who);
       if (d.kind === "booking") {
-        top.append(chip(d.paid ? "Paid" : "Payment due", d.paid ? "bg-rec text-chambray-deep" : "bg-oat text-ink"));
-        if (d.handed_over_at && !d.returned) top.append(chip("Out", "bg-rec text-chambray-deep"));
-        if (d.returned) top.append(chip("Returned", "bg-rec text-chambray-deep"));
+        top.append(chip(d.paid ? "Paid" : "Payment due", d.paid ? "bg-rec text-terra" : "bg-oat text-ink"));
+        if (d.handed_over_at && !d.returned) top.append(chip("Out", "bg-rec text-terra"));
+        if (d.returned) top.append(chip("Returned", "bg-rec text-terra"));
       }
       const del = document.createElement("button");
       del.className = "ml-auto min-h-6 px-1 text-[13px] font-bold text-[#9c4038]";
@@ -524,7 +524,7 @@ async function loadEnquiries() {
       name.textContent = q.name;
       const statusCls =
         q.status === "confirmed"
-          ? "bg-rec text-chambray-deep"
+          ? "bg-rec text-terra"
           : q.status === "declined" || q.status === "closed"
             ? "bg-oat text-ink-soft"
             : "bg-oat text-ink";

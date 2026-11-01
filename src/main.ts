@@ -139,7 +139,9 @@ function updateEstimate() {
   if (transportRow) transportRow.hidden = journeys === 0;
   setText(
     "est-transport-label",
-    f === "deliver_only" ? "Delivery (one journey)" : f === "collect_only" ? "Collection (one journey)" : "Delivery & collection (both journeys)",
+    `${f === "deliver_only" ? "Delivery (one journey)" : f === "collect_only" ? "Collection by us (one journey)" : "Delivery & collection (both journeys)"}${
+      otherChosen ? ", other location" : zone ? `, ${zone.areas}` : ""
+    }`,
   );
   setText("est-transport", est.transportQuoted ? "To be quoted" : gbp(est.transportPence ?? 0));
   setText("est-deposit", gbp(est.depositPence));
@@ -341,6 +343,15 @@ async function hydrate() {
       if (value !== undefined) el.textContent = gbp(Number(value));
     }
 
+    // The worked deposit example on the home page follows the live prices.
+    const exampleRate = pricing.rates.find((r) => r.code === "48h");
+    const exampleDeposit = Number(pricing.settings["deposit_pence"] ?? NaN);
+    if (exampleRate && !Number.isNaN(exampleDeposit)) {
+      const hire = gbp(exampleRate.price_pence);
+      for (const el of document.querySelectorAll<HTMLElement>("[data-example-cost]")) el.textContent = hire;
+      for (const el of document.querySelectorAll<HTMLElement>("[data-example-due]")) el.textContent = gbp(exampleRate.price_pence + exampleDeposit);
+    }
+
     const zoneBody = document.getElementById("zone-rows");
     if (zoneBody && pricing.delivery_zones.length > 0) {
       zoneBody.replaceChildren(
@@ -379,7 +390,7 @@ async function hydrate() {
         ...pricing.delivery_zones.map((z) => {
           const o = document.createElement("option");
           o.value = z.areas;
-          o.textContent = `${z.areas} — ${gbp(z.both_pence)} both ways`;
+          o.textContent = `${z.areas} — ${gbp(z.one_way_pence)} a journey`;
           return o;
         }),
         ...(other ? [other] : []),

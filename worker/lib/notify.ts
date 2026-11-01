@@ -95,7 +95,7 @@ export async function sendEnquiryEmails(env: Env, d: EnquiryEmailData): Promise<
       `Hi ${d.name},\n\nThanks for your enquiry about hiring our BISSELL Big Green ` +
       `(${d.plan_label}, preferred dates ${d.preferred_start} to ${d.span_end}).\n\n` +
       `This is NOT a confirmed booking yet. We'll check availability and reply personally ` +
-      `as soon as we can to agree the details; payment is arranged directly with Amanda, normally at handover, and nothing is paid online.\n\n` +
+      `as soon as we can to agree the details; payment is arranged directly with us, normally at handover, and nothing is paid online.\n\n` +
       `Sparkle Carpets, Isle of Man\nbookings@sparklecarpets.im`,
   }).catch(() => {
     /* acknowledgement is best-effort */
@@ -129,7 +129,7 @@ export async function sendConfirmationEmail(
       subject: `Your Sparkle Carpets booking is confirmed — ${d.start}`,
       text:
         `Hi ${d.name},\n\nGood news: your ${d.plan_label} is confirmed for ${d.start} to ${d.end} (inclusive).\n\n` +
-        `We'll be in touch to agree exact handover times. Handover may be with Amanda or with Barry, who helps run the service. ` +
+        `We'll be in touch to agree exact handover times. ` +
         `Payment is arranged directly with us, normally at handover, along with the refundable deposit.\n` +
         `If anything changes, just reply to this email.\n\n` +
         `Your hire is subject to the Equipment Hire Terms & Conditions v${terms.version}${
