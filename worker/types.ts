@@ -10,8 +10,10 @@ export interface Env {
   SMTP_PASS?: string;
   MAIL_FROM?: string; // e.g. "Sparkle Carpets <website@sparklecarpets.im>"
   MAIL_TO?: string;   // e.g. "bookings@sparklecarpets.im"
+  // Comma-separated addresses allowed to sign in to the admin page by emailed code.
+  ADMIN_EMAILS?: string;
   // Cloudflare Turnstile; with the secret unset, verification is skipped.
   TURNSTILE_SECRET_KEY?: string;
 }
 
-export type AppBindings = { Bindings: Env; Variables: { adminEmail?: string } };
+export type AppBindings = { Bindings: Env; Variables: { adminEmail?: string; adminSession?: boolean } };

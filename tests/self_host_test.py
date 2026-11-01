@@ -7,6 +7,7 @@ openssl command. Run: python3 tests/self_host_test.py
 import datetime as dt
 import json
 import os
+import re
 import socket
 import socketserver
 import sqlite3
@@ -103,12 +104,13 @@ def cert(directory, name):
     return crt, ctx
 
 
-def start(tmp, db, smtp_port, extra_ca):
+def start(tmp, db, smtp_port, extra_ca, extra_env=None):
     env = {
         "PATH": os.environ["PATH"], "APP_DIR": ".", "PORT": str(PORT), "DATABASE_PATH": db,
         "SMTP_HOST": "localhost", "SMTP_PORT": str(smtp_port), "SMTP_USER": "u", "SMTP_PASS": "p",
         "MAIL_FROM": "Sparkle Carpets <website@sparklecarpets.im>", "MAIL_TO": "bookings@sparklecarpets.im",
         "NODE_EXTRA_CA_CERTS": extra_ca,
+        **(extra_env or {}),
     }
     p = subprocess.Popen(["node", "--no-warnings", "dist/server/index.mjs"], env=env,
                          stdout=open(f"{tmp}/server.log", "a"), stderr=subprocess.STDOUT)
@@ -185,6 +187,38 @@ with tempfile.TemporaryDirectory() as tmp:
     check("Migrations run once only", log.count("migration applied: 0001") == 1)
     rows = sqlite3.connect(db).execute("SELECT count(*) FROM enquiries").fetchone()[0]
     check("Enquiry survives a restart", rows == 1, str(rows))
+    stop(p)
+
+    # Admin sign-in with the real Hono and real mail transport.
+    p = start(tmp, db, 8796, both, {"ADMIN_EMAILS": "owner@example.com"})
+
+    def post(path, body, cookie=None):
+        headers = {"content-type": "application/json", **({"cookie": cookie} if cookie else {})}
+        req = urllib.request.Request(HTTP + path, data=json.dumps(body).encode(), headers=headers)
+        try:
+            r = urllib.request.urlopen(req)
+            return r.status, r.headers
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers
+
+    def me(cookie=None):
+        req = urllib.request.Request(HTTP + "/api/admin/me", headers={"cookie": cookie} if cookie else {})
+        try:
+            return urllib.request.urlopen(req).status
+        except urllib.error.HTTPError as e:
+            return e.code
+
+    check("Admin API refuses a visitor with no session", me() == 401)
+    post("/api/auth/request", {"email": "owner@example.com"})
+    code = re.search(r"\b([A-Z0-9]{4} [A-Z0-9]{4})\b", starttls.messages[-1]).group(1)
+    check("Sign-in code arrives over real TLS", "sign-in code" in starttls.messages[-1])
+    status, headers = post("/api/auth/verify", {"email": "owner@example.com", "code": code})
+    set_cookie = headers.get("set-cookie", "")
+    check("Correct code signs in with a secure cookie", status == 200 and all(f in set_cookie for f in ["HttpOnly", "Secure", "SameSite=Strict"]), set_cookie)
+    cookie = set_cookie.split(";")[0]
+    check("Session opens the admin API", me(cookie) == 200)
+    post("/api/auth/logout", {}, cookie)
+    check("Sign out ends the session", me(cookie) == 401)
     stop(p)
 
     # Implicit TLS, port must be 465 for the client to choose it, so this path

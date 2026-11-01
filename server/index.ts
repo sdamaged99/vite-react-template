@@ -22,6 +22,7 @@ const env = {
   DB: db,
   ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
   ACCESS_AUD: process.env.ACCESS_AUD ?? "",
+  ADMIN_EMAILS: process.env.ADMIN_EMAILS,
   SMTP_HOST: process.env.SMTP_HOST,
   SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,

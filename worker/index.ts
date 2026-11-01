@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { publicRoutes } from "./routes/public";
 import { adminRoutes } from "./routes/admin";
+import { authRoutes } from "./routes/auth";
 import { runReminders } from "./lib/reminders";
 import type { AppBindings, Env } from "./types";
 
@@ -8,6 +9,7 @@ const app = new Hono<AppBindings>();
 
 app.route("/api", publicRoutes);
 app.route("/api/admin", adminRoutes);
+app.route("/api/auth", authRoutes);
 
 app.notFound((c) => c.json({ error: "Not found" }, 404));
 app.onError((err, c) => {

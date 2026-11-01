@@ -43,7 +43,7 @@ Apply the same approach to enquiry emails in the bookings mailbox and to WhatsAp
 | Symptom | First checks |
 | --- | --- |
 | /api/* returning 500 | Worker logs (observability is enabled), recent deploy, D1 binding present |
-| Admin 401 for Amanda | Access policy includes her email; `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` match the Access app; JWT header reaching the Worker |
-| Admin 503 | Access vars unset; admin is fail-closed by design |
+| Admin sign-in code never arrives | Address is in `ADMIN_EMAILS` exactly; mail settings correct; spam folder; `journalctl -u sparkle-carpets` for send errors; limit of 5 codes an hour and 1 a minute |
+| Admin 503 | `ADMIN_EMAILS` unset; admin is fail-closed by design |
 | Enquiry emails missing | Admin page "not emailed" flags, NethServer mail log, SMTP secrets set, spam folder |
 | Calendar not showing busy dates | `/api/unavailable` response; diary entries' date ranges |

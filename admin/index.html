@@ -20,11 +20,33 @@
           Sparkle Admin
         </span>
         <span id="whoami" class="ml-auto text-[13.5px] text-ink-soft"></span>
+        <button id="sign-out" type="button" hidden class="min-h-11 px-2 text-[15px] font-bold text-terra-dark">Sign out</button>
       </div>
     </header>
     <main class="shell grid max-w-[900px] gap-10 py-8">
       <p id="admin-error" hidden role="alert" class="enq-err sticky top-2 z-10"></p>
 
+      <section id="admin-login" hidden class="mx-auto grid w-full max-w-[420px] gap-4" aria-labelledby="login-title">
+        <h1 id="login-title" class="text-[28px]">Sign in</h1>
+        <form id="login-email-form" class="grid gap-3">
+          <p class="text-[16px]">Enter your email address and we'll send you a one-time code.</p>
+          <label class="field">Email address
+            <input id="login-email" type="email" required autocomplete="email" maxlength="200" />
+          </label>
+          <button type="submit" class="btn">Email me a code</button>
+        </form>
+        <form id="login-code-form" hidden class="grid gap-3">
+          <p class="text-[16px]">If that address is allowed, a code is on its way. It lasts 10 minutes. Please check your spam folder too.</p>
+          <label class="field">Sign-in code
+            <input id="login-code" required autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="20" />
+          </label>
+          <p id="login-error" hidden role="alert" class="enq-err"></p>
+          <button type="submit" class="btn">Sign in</button>
+          <button id="login-restart" type="button" class="min-h-11 text-[16px] font-bold text-terra-dark">Use a different address</button>
+        </form>
+      </section>
+
+      <div id="admin-app" class="grid gap-10">
       <section class="grid gap-4" aria-labelledby="today-title">
         <h1 id="today-title" class="text-[26px]">Today</h1>
         <div id="today" class="grid gap-6"><p class="text-[14px] text-ink-soft">Loading…</p></div>
@@ -67,6 +89,7 @@
         <h2 class="text-[22px]">Recent activity</h2>
         <div id="activity-list" class="grid gap-1 rounded-xl border border-line bg-card p-4"></div>
       </section>
+      </div>
     </main>
   </body>
 </html>

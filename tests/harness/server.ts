@@ -42,6 +42,7 @@ const env = () => ({
   DB,
   ACCESS_TEAM_DOMAIN: TEAM,
   ACCESS_AUD: AUD,
+  ADMIN_EMAILS: "Amanda@Example.com, barry@example.com",
   SMTP_HOST: "mail.example.test",
   SMTP_PORT: "465",
   SMTP_USER: "u",

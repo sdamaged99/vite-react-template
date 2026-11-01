@@ -1,10 +1,9 @@
 # Copy to .dev.vars for local development. Never commit .dev.vars.
-# Secrets in production are set with `wrangler secret put <NAME>`;
-# ACCESS_* are plain vars in wrangler.jsonc.
+# On the server these live in /etc/sparkle-carpets/env (see SELF_HOSTING.md).
 
-# Cloudflare Access (admin auth). Both unset = admin API fail-closed (503).
-ACCESS_TEAM_DOMAIN=""
-ACCESS_AUD=""
+# Addresses that can sign in to /admin/ by emailed code, comma-separated.
+# Unset = admin API fail-closed (503).
+ADMIN_EMAILS=""
 
 # Email via the business's own NethServer over authenticated SMTP.
 # With any of these unset, enquiries are stored but no email is attempted.

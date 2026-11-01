@@ -8,6 +8,7 @@ Run: python3 tests/browser_test.py
 import datetime as dt
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -808,10 +809,32 @@ with sync_playwright() as p:
         nctx.route("**/fonts.*/**", lambda r: r.abort())
         np_ = nctx.new_page()
         np_.goto(BASE + "/admin/", wait_until="domcontentloaded")
-        np_.wait_for_selector("#admin-error:not([hidden])", timeout=10000)
-        assert np_.locator("#enquiry-list > *").count() == 0
+        np_.wait_for_selector("#admin-login:not([hidden])", timeout=10000)
+        assert np_.locator("#admin-app").is_hidden() and np_.locator("#enquiry-list > *").count() == 0
+        np_.fill("#login-email", "stranger@example.com")
+        np_.click("#login-email-form button[type=submit]")
+        np_.wait_for_selector("#login-code-form:not([hidden])")
+        np_.fill("#login-code", "AAAA BBBB")
+        np_.click("#login-code-form button[type=submit]")
+        np_.wait_for_selector("#login-error:not([hidden])")
+        assert np_.locator("#admin-app").is_hidden()
+
+        np_.click("#login-restart")
+        np_.fill("#login-email", "AMANDA@example.com")
+        np_.click("#login-email-form button[type=submit]")
+        np_.wait_for_selector("#login-code-form:not([hidden])")
+        mail = json.loads(urllib.request.urlopen(f"{BASE}/__test/smtp").read())
+        text = [m for s in mail for m in s if "sign-in code" in m["data"]][-1]["data"]
+        code = re.search(r"\b([A-Z0-9]{4} [A-Z0-9]{4})\b", text).group(1)
+        np_.fill("#login-code", code)
+        np_.click("#login-code-form button[type=submit]")
+        np_.wait_for_selector("#sign-out:not([hidden])", timeout=10000)
+        assert np_.locator("#admin-app").is_visible() and np_.locator("#admin-login").is_hidden()
+        assert "amanda@example.com" in np_.text_content("#whoami")
+        np_.click("#sign-out")
+        np_.wait_for_selector("#admin-login:not([hidden])", timeout=10000)
         nctx.close()
-    check("16 Admin", "Admin page without an Access token shows an error and no data", admin_locked)
+    check("16 Admin", "Admin page shows sign-in and no data until a real code is entered; sign out locks it again", admin_locked)
 
     browser.close()
 

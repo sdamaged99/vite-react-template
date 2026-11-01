@@ -407,6 +407,114 @@ await test("16 Admin", "Admin API is fail-closed: unconfigured 503, no/forged/wr
   assert.equal((await admin("GET", "/enquiries")).status, 200);
 });
 
+await test("16 Admin", "Sign-in: allowlist, hashed codes, single use, expiry, attempt and send limits, removal and sign-out", async () => {
+  const OWNER = "owner@example.com";
+  const authEnv = () => ({ ...baseEnv(), ACCESS_TEAM_DOMAIN: "", ACCESS_AUD: "", ADMIN_EMAILS: `${OWNER.toUpperCase()}, second@example.com` });
+  env = authEnv();
+  const noSends = () => smtpState.sessions.flatMap((s) => s.messages).length;
+  const codes = () => DB.raw.prepare("SELECT * FROM admin_login_codes ORDER BY id").all() as any[];
+  const ask = (email: string) => call("POST", "/api/auth/request", { email });
+  const verify = (code: string, email = OWNER) => call("POST", "/api/auth/verify", { email, code });
+  const lastCode = () => {
+    const msgs = smtpState.sessions.flatMap((s) => s.messages);
+    return msgs[msgs.length - 1]!.data.match(/\b([A-Z0-9]{4} [A-Z0-9]{4})\b/)![1]!;
+  };
+  const age = () => DB.raw.exec("UPDATE admin_login_codes SET created_at = datetime(created_at, '-2 minutes')");
+
+  // Sessions-only mode stays closed without a cookie.
+  assert.equal((await call("GET", "/api/admin/enquiries")).status, 401);
+
+  // An address that isn't allowed looks identical, but nothing is sent or stored.
+  smtpState.sessions.length = 0;
+  const stranger = await ask("stranger@example.com");
+  assert.equal(stranger.status, 200);
+  assert.deepEqual(stranger.body, { ok: true });
+  assert.equal(noSends(), 0);
+  assert.equal(codes().length, 0);
+
+  // Allowed, in any letter case. Only a hash is stored.
+  const asked = await ask(" Owner@Example.COM ");
+  assert.deepEqual(asked.body, { ok: true });
+  assert.equal(noSends(), 1);
+  const first = lastCode();
+  assert.ok(!JSON.stringify(codes()).includes(first.replace(" ", "")), "plain code never stored");
+
+  // One code a minute.
+  await ask(OWNER);
+  assert.equal(noSends(), 1, "second request inside a minute sends nothing");
+
+  // Five wrong guesses burn the code, even if the sixth is right.
+  for (let i = 0; i < 5; i++) assert.equal((await verify("AAAA BBBB")).status, 401);
+  assert.equal((await verify(first)).status, 401, "attempt limit holds against the right code");
+
+  // Expired codes fail.
+  age();
+  await ask(OWNER);
+  const expiring = lastCode();
+  DB.raw.exec("UPDATE admin_login_codes SET expires_at = datetime('now', '-1 minute')");
+  assert.equal((await verify(expiring)).status, 401);
+
+  // A code belongs to its address.
+  age();
+  await ask(OWNER);
+  assert.equal((await verify(lastCode(), "second@example.com")).status, 401);
+
+  // A new code replaces older ones, works once, and sets a secure cookie.
+  age();
+  await ask(OWNER);
+  const older = lastCode();
+  age();
+  await ask(OWNER);
+  const good = lastCode();
+  assert.equal((await verify(older)).status, 401);
+  const ok = await verify(good.toLowerCase().replace(" ", "-"));
+  assert.equal(ok.status, 200, "spacing and case don't matter");
+  const setCookie = ok.headers.get("set-cookie")!;
+  for (const flag of ["HttpOnly", "Secure", "SameSite=Strict", "Path=/api"]) assert.ok(setCookie.includes(flag), flag);
+  assert.equal((await verify(good)).status, 401, "single use");
+  const cookie = setCookie.split(";")[0]!;
+  const token = cookie.split("=")[1]!;
+  assert.ok(!JSON.stringify(DB.raw.prepare("SELECT * FROM admin_sessions").all()).includes(token), "plain token never stored");
+
+  const withCookie = (c: string) => call("GET", "/api/admin/me", undefined, { Cookie: c });
+  const me = await withCookie(cookie);
+  assert.equal(me.status, 200);
+  assert.deepEqual(me.body, { email: OWNER, session: true });
+  assert.equal((await withCookie("sparkle_admin=forged")).status, 401);
+  assert.equal((DB.raw.prepare("SELECT actor FROM audit_log WHERE action = 'auth.sign_in'").get() as any).actor, OWNER);
+
+  // Removing someone from the allowlist ends their session straight away.
+  env = { ...authEnv(), ADMIN_EMAILS: "second@example.com" };
+  assert.equal((await withCookie(cookie)).status, 401);
+  env = authEnv();
+  assert.equal((await withCookie(cookie)).status, 200);
+
+  // Expired sessions fail, and sign-out ends a live one.
+  DB.raw.exec("UPDATE admin_sessions SET expires_at = datetime('now', '-1 minute')");
+  assert.equal((await withCookie(cookie)).status, 401);
+  DB.raw.exec("UPDATE admin_sessions SET expires_at = datetime('now', '+1 day')");
+  const out = await call("POST", "/api/auth/logout", {}, { Cookie: cookie });
+  assert.ok(out.headers.get("set-cookie")!.includes("Max-Age=0"));
+  assert.equal((await withCookie(cookie)).status, 401);
+
+  // A failed send leaves no usable code behind.
+  DB.raw.exec("DELETE FROM admin_login_codes");
+  smtpState.mode = "refuse";
+  assert.equal((await ask(OWNER)).status, 200);
+  assert.equal(codes().length, 0);
+  smtpState.mode = "ok";
+
+  // Five codes an hour.
+  DB.raw.exec("DELETE FROM admin_login_codes");
+  smtpState.sessions.length = 0;
+  for (let i = 0; i < 7; i++) {
+    await ask(OWNER);
+    age();
+  }
+  assert.equal(noSends(), 5);
+  env = baseEnv();
+});
+
 /* ------------------------------ 15 formal acceptance / 16 admin flows ---- */
 let confirmId = 0;
 await test("15 Terms", "Confirming does NOT record formal acceptance; confirmation email doesn't claim it", async () => {

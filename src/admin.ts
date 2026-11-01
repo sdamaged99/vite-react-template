@@ -1,5 +1,5 @@
-// Amanda's availability screen. All endpoints sit behind Cloudflare Access;
-// a 401/503 here means Access isn't set up or the session expired.
+// The private admin page. Every endpoint needs a signed-in admin: a 401 shows
+// the sign-in form, and a 503 means admin sign-in hasn't been configured.
 
 interface DiaryEntry {
   id: number;
@@ -75,6 +75,79 @@ interface Activity {
 
 const errBox = document.getElementById("admin-error");
 
+/* ------------------------------------------------------------ sign-in ---- */
+const loginSection = document.getElementById("admin-login");
+const adminApp = document.getElementById("admin-app");
+const emailForm = document.getElementById("login-email-form") as HTMLFormElement | null;
+const codeForm = document.getElementById("login-code-form") as HTMLFormElement | null;
+const emailInput = document.getElementById("login-email") as HTMLInputElement | null;
+const codeInput = document.getElementById("login-code") as HTMLInputElement | null;
+const loginError = document.getElementById("login-error");
+
+function showLogin() {
+  if (!loginSection || !loginSection.hidden) return;
+  if (adminApp) adminApp.hidden = true;
+  loginSection.hidden = false;
+  emailInput?.focus();
+}
+
+const authPost = (path: string, body: object) =>
+  fetch(`/api/auth/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+emailForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = emailInput?.value.trim() ?? "";
+  if (!email) return;
+  const button = emailForm.querySelector("button");
+  if (button) button.disabled = true;
+  try {
+    await authPost("request", { email });
+    emailForm.hidden = true;
+    if (codeForm) codeForm.hidden = false;
+    codeInput?.focus();
+  } catch {
+    fail("We couldn't reach the server. Please check your connection and try again.");
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
+codeForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (loginError) loginError.hidden = true;
+  const button = codeForm.querySelector<HTMLButtonElement>("button[type=submit]");
+  if (button) button.disabled = true;
+  try {
+    const res = await authPost("verify", { email: emailInput?.value.trim(), code: codeInput?.value });
+    if (res.ok) {
+      location.reload();
+      return;
+    }
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    if (loginError) {
+      loginError.textContent = body.error ?? "That didn't work. Please try again.";
+      loginError.hidden = false;
+    }
+  } catch {
+    fail("We couldn't reach the server. Please check your connection and try again.");
+  } finally {
+    if (button) button.disabled = false;
+  }
+});
+
+document.getElementById("login-restart")?.addEventListener("click", () => {
+  if (codeForm) codeForm.hidden = true;
+  if (emailForm) emailForm.hidden = false;
+  if (codeInput) codeInput.value = "";
+  if (loginError) loginError.hidden = true;
+  emailInput?.focus();
+});
+
+document.getElementById("sign-out")?.addEventListener("click", async () => {
+  await authPost("logout", {}).catch(() => undefined);
+  location.reload();
+});
+
 function fail(msg: string) {
   if (!errBox) return;
   errBox.textContent = msg;
@@ -87,11 +160,11 @@ async function api<T>(path: string, init?: RequestInit): Promise<T | null> {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
   });
   if (res.status === 401) {
-    fail("Not signed in. Open this page through the Cloudflare Access sign-in (one-time PIN to your email) and try again.");
+    showLogin();
     return null;
   }
   if (res.status === 503) {
-    fail("Admin access isn't configured yet. Barry needs to set up the Cloudflare Access application first.");
+    fail("Admin sign-in isn't configured yet.");
     return null;
   }
   if (!res.ok) {
@@ -121,9 +194,11 @@ function actionBtn(label: string, onClick: (btn: HTMLButtonElement) => void, gho
 }
 
 async function loadWho() {
-  const me = await api<{ email: string | null }>("/me");
+  const me = await api<{ email: string | null; session?: boolean }>("/me");
   const el = document.getElementById("whoami");
   if (el && me?.email) el.textContent = me.email;
+  const signOut = document.getElementById("sign-out");
+  if (signOut && me?.session) signOut.hidden = false;
 }
 
 function refreshAll() {

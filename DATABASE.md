@@ -63,3 +63,7 @@ See OPERATIONS.md: D1 Time Travel for 30-day point-in-time restore, plus a sched
 ## Migration 0010: handover, return and deposit ledger
 
 Additive. `diary` gains `handed_over_at`, `handover_check` (JSON checklist), `returned_at`, `return_check`, `hire_paid_pence`, `hire_paid_method` (`cash`/`bank`), `hire_paid_at`. New table `deposit_entries` (`taken` once per hire via a partial unique index; any number of `refund`/`deduction` rows, each refused by a guarded insert if it would exceed what is held). Hire income lives on the diary row; deposit money only in the ledger. `deposit_status` is kept in step for older screens. Rows created before 0010 keep their `paid`/`returned`/`deposit_status` values; their deposit amount is simply unrecorded. Hires with handover or money records can't be deleted from the dashboard.
+
+## Admin sign-in (migration 0012)
+
+`admin_login_codes` holds hashed one-time codes with an attempt count, and rows older than a day are cleared on the next request. `admin_sessions` holds hashed session tokens, with expired rows cleared at each sign-in. Plain codes and tokens are never stored.

@@ -1,21 +1,21 @@
 import { Hono } from "hono";
 import { lastDay, spanDaysFor } from "../../shared/booking";
-import { requireAccess } from "../lib/access";
 import { FULFILMENT_LABELS, sendConfirmationEmail, sendEnquiryEmails, type EnquiryEmailData } from "../lib/notify";
+import { requireAdmin } from "../lib/session";
 import { CURRENT_TERMS } from "../lib/terms";
 import { DIARY_COLUMNS, registerHireRoutes } from "./hire";
 import type { AppBindings } from "../types";
 
 /**
  * Minimal admin API for Amanda's one-page availability screen at /admin/.
- * Everything requires a valid Cloudflare Access JWT (fail-closed).
+ * Everything requires a signed-in admin (fail-closed); see lib/session.ts.
  */
 export const adminRoutes = new Hono<AppBindings>();
 
-adminRoutes.use("*", requireAccess);
+adminRoutes.use("*", requireAdmin);
 registerHireRoutes(adminRoutes);
 
-adminRoutes.get("/me", (c) => c.json({ email: c.get("adminEmail") ?? null }));
+adminRoutes.get("/me", (c) => c.json({ email: c.get("adminEmail") ?? null, session: c.get("adminSession") ?? false }));
 
 adminRoutes.get("/diary", async (c) => {
   const { results } = await c.env.DB.prepare(

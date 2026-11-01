@@ -25,7 +25,7 @@ The Cloudflare Vite plugin runs the Worker and static assets together at the dev
 2. `npm run db:migrate:remote`
 3. **Email (self-hosted NethServer):** create a sending mailbox (e.g. website@sparklecarpets.im), then set secrets:
    `npx wrangler secret put SMTP_HOST` (mail server hostname), `SMTP_PORT` (`465` implicit TLS or `587` STARTTLS), `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` (e.g. `Sparkle Carpets <website@sparklecarpets.im>`), `MAIL_TO` (`bookings@sparklecarpets.im`). With any unset, enquiries are stored but no email is sent. The server must present a valid TLS certificate and allow outbound submission from Cloudflare's network.
-4. **Cloudflare Access (admin page):** Zero Trust → Access → Applications → self-hosted app covering `sparkle-carpets.../admin/*` and `/api/admin/*`, policy: Allow, include Emails = Amanda's address, one-time PIN login method. Then set `ACCESS_TEAM_DOMAIN` (e.g. `yourteam.cloudflareaccess.com`) and `ACCESS_AUD` (the app's Audience tag) in `wrangler.jsonc` vars and redeploy. Admin APIs are fail-closed until then.
+4. **Admin sign-in:** set `ADMIN_EMAILS` to the addresses allowed in. They sign in at `/admin/` with a one-time code by email. Admin stays closed while it's unset. See `SELF_HOSTING.md`.
 5. **Turnstile (anti-spam):** Turnstile → Add site → copy the site key into `TURNSTILE_SITE_KEY` in `src/main.ts`, and `npx wrangler secret put TURNSTILE_SECRET_KEY`. Until both are set, the form relies on validation plus a honeypot.
 6. **WhatsApp:** once the business number is verified, set it (digits only, international format) in the `settings` table key `whatsapp_number`; the buttons appear automatically.
 

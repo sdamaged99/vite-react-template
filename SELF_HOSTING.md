@@ -3,9 +3,9 @@
 The site runs as one Node process: the Hono API plus the built pages, with a
 SQLite file in place of D1. Cloudflare stays in front, and the existing Nginx
 Proxy Manager at 81.88.168.10 forwards to the container at 10.100.40.134.
-Cloudflare Access keeps protecting the admin page.
+The admin page has its own emailed-code sign-in.
 
-    Visitor -> Cloudflare (TLS, Access) -> Nginx Proxy Manager -> 10.100.40.134:8787 (Node)
+    Visitor -> Cloudflare (DNS and proxy) -> Nginx Proxy Manager -> 10.100.40.134:8787 (Node)
 
 Commands assume Debian or Ubuntu, run as root.
 
@@ -81,12 +81,16 @@ Port 8787 is open to anything that can reach the container. If you want it
 limited, allow only Nginx Proxy Manager's internal address in the container's
 firewall.
 
-## 5. Protect the admin page
+## 5. Sign-in for the admin page
 
-Zero Trust -> Access -> Applications -> Add -> Self-hosted, for
-`sparklecarpets.im` with paths `admin` and `api/admin`. Policy: Allow, emails
-for Amanda and you, login by one-time PIN. Put the Audience tag and team domain
-into `/etc/sparkle-carpets/env`, then `systemctl restart sparkle-carpets`.
+Put the addresses allowed to sign in into `ADMIN_EMAILS` in
+`/etc/sparkle-carpets/env`, separated by commas, then
+`systemctl restart sparkle-carpets`.
+
+At `/admin/`, an allowed address gets a one-time code by email, valid for 10
+minutes. The session then lasts 14 days on that device. With `ADMIN_EMAILS`
+empty, admin stays closed. Signing in needs working mail, so if the mail server
+is down, nobody can sign in until it's back.
 
 ## 6. Mail
 
@@ -130,4 +134,4 @@ To restore: stop the service, `gunzip` a backup over `sparkle.db`, delete
 - The site now depends on the container, Nginx Proxy Manager and your internet
   connection all being up.
 - The proxy is reachable directly at its public address, bypassing Cloudflare.
-  The admin API stays safe because the app verifies the Access token itself.
+  The admin API stays safe because the app checks every session itself.

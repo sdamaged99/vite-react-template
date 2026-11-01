@@ -17,7 +17,7 @@ Barry (repo owner) builds and maintains it and also does some handovers.
 | Deploy | Cloudflare Workers Builds: **every push to `main` deploys to production**. Other branches build previews |
 | Database | D1 `sparkle-carpets`, id `bd084e6b-7008-4f3d-b434-d38136f0d316`, binding `DB` |
 | Email | Self-hosted NethServer 8 over SMTP (dependency-free client in `worker/lib/smtp.ts`) |
-| Admin | `/admin/`, protected by Cloudflare Access (verified again inside the Worker; fail-closed) |
+| Admin | `/admin/`, emailed one-time code to `ADMIN_EMAILS`, then a 14-day HttpOnly session (`worker/lib/session.ts`, fail-closed). Cloudflare Access still works if its vars are set, until the Worker is retired |
 
 **Warning:** preview builds use the **production D1**. Never point tests or experiments at a preview with real data unless you mean to.
 
