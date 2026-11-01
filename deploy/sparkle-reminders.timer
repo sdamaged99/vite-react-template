@@ -1,0 +1,11 @@
+# Same schedule as the Worker cron (08:00 UTC). Enable only if you want it:
+#   systemctl enable --now sparkle-reminders.timer
+[Unit]
+Description=Daily Sparkle Carpets reminder run
+
+[Timer]
+OnCalendar=*-*-* 08:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

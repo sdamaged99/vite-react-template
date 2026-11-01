@@ -24,20 +24,28 @@ export interface Mail {
 const CRLF = "\r\n";
 const TIMEOUT_MS = 15000;
 
-/** Minimal shape of a Workers TCP socket; `cloudflare:sockets` is loaded at
- * runtime so the bundler never has to resolve the builtin module. */
-interface CfSocket {
+/** Minimal shape of a Workers TCP socket. On Cloudflare `cloudflare:sockets`
+ * is loaded at runtime (so the bundler never resolves the builtin); the
+ * self-hosted Node server supplies an equivalent via setSocketConnect(). */
+export interface CfSocket {
   readable: ReadableStream<Uint8Array>;
   writable: WritableStream<Uint8Array>;
   close(): Promise<void>;
   startTls(): CfSocket;
 }
-type ConnectFn = (
+export type ConnectFn = (
   address: { hostname: string; port: number },
   options: { secureTransport: "on" | "starttls"; allowHalfOpen: boolean },
 ) => CfSocket;
 
+let connectOverride: ConnectFn | null = null;
+/** Used by the Node server (server/sockets-node.ts); never called on Workers. */
+export function setSocketConnect(fn: ConnectFn) {
+  connectOverride = fn;
+}
+
 async function getConnect(): Promise<ConnectFn> {
+  if (connectOverride) return connectOverride;
   const mod = (await import(/* @vite-ignore */ "cloudflare:sockets")) as { connect: ConnectFn };
   return mod.connect;
 }

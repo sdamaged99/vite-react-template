@@ -61,6 +61,10 @@ SITE_CSS=… FONT_DIR=… SHOT_DIR=… python3 tests/visual_test.py     # styled
 
 The browser tests run the pages unstyled (no Tailwind build offline), so they cover behaviour, not appearance. Nothing in `tests/` is part of the build.
 
+## Self-hosting (Node)
+
+The same app also builds for a plain Node 22 server (SQLite file instead of D1): `npm run build:node`, then `npm start`. Setup on an Ubuntu LXC behind Nginx Proxy Manager, data export from D1, Cloudflare cutover and rollback are in [SELF_HOSTING.md](SELF_HOSTING.md). systemd units and an env template are in `deploy/`.
+
 ## Publishing new hire terms
 
 1. Add the new wording as `terms/versions/vN.N.txt` (never edit an old version's file).

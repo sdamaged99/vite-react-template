@@ -1,0 +1,8 @@
+[Unit]
+Description=Sparkle Carpets nightly SQLite backup
+
+[Service]
+Type=oneshot
+User=sparkle
+Group=sparkle
+ExecStart=/bin/sh -c 'f=/srv/sparkle/backups/sparkle-$(date +%%F).db && sqlite3 /srv/sparkle/data/sparkle.db ".backup $f" && gzip -f "$f" && find /srv/sparkle/backups -name "sparkle-*.db.gz" -mtime +30 -delete'

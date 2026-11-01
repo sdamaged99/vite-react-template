@@ -1,0 +1,24 @@
+[Unit]
+Description=Sparkle Carpets website (Node)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sparkle
+Group=sparkle
+WorkingDirectory=/srv/sparkle/app
+EnvironmentFile=/etc/sparkle/sparkle.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /srv/sparkle/app/dist/server/server.js
+Restart=on-failure
+RestartSec=3
+# Hardening: the app only needs to write its database folder.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/srv/sparkle/data
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

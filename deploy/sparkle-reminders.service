@@ -1,0 +1,10 @@
+[Unit]
+Description=Sparkle Carpets hire reminders (does nothing unless reminders are enabled in admin settings)
+
+[Service]
+Type=oneshot
+User=sparkle
+Group=sparkle
+WorkingDirectory=/srv/sparkle/app
+EnvironmentFile=/etc/sparkle/sparkle.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /srv/sparkle/app/dist/server/server.js --run-reminders
